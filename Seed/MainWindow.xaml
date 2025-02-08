@@ -6,9 +6,94 @@
     xmlns:local="using:Seed"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d">
+    xmlns:animatedVisuals="using:Microsoft.UI.Xaml.Controls.AnimatedVisuals"
+    mc:Ignorable="d"
+    Title="Seed Browser"
+    SizeChanged="Window_SizeChanged">
 
-    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-        <Button x:Name="myButton" Click="myButton_Click">Click Me</Button>
-    </StackPanel>
+    <Grid Background="{ThemeResource SolidBackgroundColorSecondaryBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition />
+        </Grid.RowDefinitions>
+        <Grid x:Name="AppTitleBar" Height="44" Padding="6,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition x:Name="DragAreaColumn" Width="*"/>
+                <ColumnDefinition x:Name="RightPaddingColumn" Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <Rectangle Fill="{ThemeResource ColorDark2}" Width="75" Height="5" RadiusX="2.5" RadiusY="2.5" HorizontalAlignment="Center" VerticalAlignment="Center" Grid.ColumnSpan="3"
+                       ToolTipService.ToolTip="Personal Space"/>
+            <StackPanel Orientation="Horizontal" Grid.Column="2">
+                <SplitButton Height="32" HorizontalAlignment="Right" Padding="0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Background="Transparent" BorderThickness="0" Grid.Column="1"
+                             Click="SwitchThemeByClick"
+                             ToolTipService.ToolTip="App Theme">
+                    <SplitButton.Resources>
+                        <ResourceDictionary>
+                            <ResourceDictionary.ThemeDictionaries>
+                                <ResourceDictionary x:Key="Default">
+                                    <SolidColorBrush x:Key="SplitButtonBorderBrushDivider" Color="Transparent" />
+                                    <SolidColorBrush x:Key="SplitButtonBorderBrushCheckedDivider" Color="Transparent" />
+                                </ResourceDictionary>
+                                <ResourceDictionary x:Key="Light">
+                                    <SolidColorBrush x:Key="SplitButtonBorderBrushDivider" Color="Transparent" />
+                                    <SolidColorBrush x:Key="SplitButtonBorderBrushCheckedDivider" Color="Transparent" />
+                                </ResourceDictionary>
+                                <ResourceDictionary x:Key="HighContrast">
+                                    <SolidColorBrush x:Key="SplitButtonBorderBrushDivider" Color="Transparent" />
+                                    <SolidColorBrush x:Key="SplitButtonBorderBrushCheckedDivider" Color="Transparent" />
+                                </ResourceDictionary>
+                            </ResourceDictionary.ThemeDictionaries>
+                        </ResourceDictionary>
+                    </SplitButton.Resources>
+                    <FontIcon x:Name="ThemeIcon" FontSize="15" FontFamily="Segoe Fluent Icons" Glyph="&#xF08C;" Foreground="{ThemeResource DefaultTextForegroundThemeBrush}" />
+                    <SplitButton.Flyout>
+                        <MenuFlyout AreOpenCloseAnimationsEnabled="True">
+                            <MenuFlyoutItem Text="System Default" Click="SwitchThemeByMenu">
+                                <MenuFlyoutItem.Icon>
+                                    <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xF08C;" Foreground="{ThemeResource DefaultTextForegroundThemeBrush}" />
+                                </MenuFlyoutItem.Icon>
+                            </MenuFlyoutItem>
+                            <MenuFlyoutItem Text="Dark" Click="SwitchThemeByMenu">
+                                <MenuFlyoutItem.Icon>
+                                    <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE708;" Foreground="{ThemeResource DefaultTextForegroundThemeBrush}" />
+                                </MenuFlyoutItem.Icon>
+                            </MenuFlyoutItem>
+                            <MenuFlyoutItem Text="Light" Click="SwitchThemeByMenu">
+                                <MenuFlyoutItem.Icon>
+                                    <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE706;" Foreground="{ThemeResource DefaultTextForegroundThemeBrush}" />
+                                </MenuFlyoutItem.Icon>
+                            </MenuFlyoutItem>
+                            <MenuFlyoutSeparator/>
+                            <MenuFlyoutItem Text="Settings">
+                                <MenuFlyoutItem.Icon>
+                                    <AnimatedIcon Foreground="{ThemeResource DefaultTextForegroundThemeBrush}">
+                                        <AnimatedIcon.Source>
+                                            <animatedVisuals:AnimatedSettingsVisualSource/>
+                                        </AnimatedIcon.Source>
+                                        <AnimatedIcon.FallbackIconSource>
+                                            <SymbolIconSource Symbol="Setting" />
+                                        </AnimatedIcon.FallbackIconSource>
+                                    </AnimatedIcon>
+                                </MenuFlyoutItem.Icon>
+                            </MenuFlyoutItem>
+                        </MenuFlyout>
+                    </SplitButton.Flyout>
+                </SplitButton>
+
+                <Button Click="MinimizeClicked" Padding="16,8" Style="{ThemeResource TextButtonStyle}" IsTabStop="False" 
+                        ToolTipService.ToolTip="Minimize">
+                    <FontIcon FontSize="12" FontFamily="Segoe Fluent Icons" Glyph="&#xE921;" />
+                </Button>
+                <Button Click="MaximizeClicked" Padding="16,8" Style="{ThemeResource TextButtonStyle}" IsTabStop="False"
+                        ToolTipService.ToolTip="Maximize/Restore">
+                    <FontIcon FontSize="12" FontFamily="Segoe Fluent Icons" Glyph="&#xE923;" />
+                </Button>
+                <Button Click="CloseClicked" Padding="16,8" Style="{ThemeResource ErrorTextButtonStyle}" IsTabStop="False"
+                        ToolTipService.ToolTip="Close">
+                    <FontIcon FontSize="12" FontFamily="Segoe Fluent Icons" Glyph="&#xE8BB;" />
+                </Button>
+            </StackPanel>
+        </Grid>
+    </Grid>
 </Window>

@@ -65,16 +65,14 @@
     <Page Include="MainWindow.xaml">
       <Filter>Designer Files</Filter>
     </Page>
+    <Page Include="GlobalStyle.xaml">
+      <Filter>Designer Files</Filter>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Manifest Include="app.manifest">
       <Filter>Resource Files</Filter>
     </Manifest>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config">
-      <Filter>Resource Files</Filter>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <Text Include="readme.txt">
@@ -90,5 +88,11 @@
     <ClInclude Include="pch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Utilities.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>

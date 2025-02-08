@@ -4,26 +4,173 @@
 #include "MainWindow.g.cpp"
 #endif
 
-using namespace winrt;
-using namespace Microsoft::UI::Xaml;
+#pragma region WinUI Headers
+
+#include "microsoft.ui.xaml.window.h" // for IWindowNative
+#include "winrt/Microsoft.UI.Windowing.h"
+#include "winrt/Windows.UI.Xaml.Interop.h"
+#include "winrt/Microsoft.UI.Xaml.Media.Animation.h"
+
+#pragma endregion
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
 
 namespace winrt::Seed::implementation
 {
-    int32_t MainWindow::MyProperty()
+    MainWindow::MainWindow()
     {
-        throw hresult_not_implemented();
+        SetModernAppTitleBar();
     }
 
-    void MainWindow::MyProperty(int32_t /* value */)
+    void MainWindow::SetModernAppTitleBar()
     {
-        throw hresult_not_implemented();
+        auto windowNative{ this->try_as<::IWindowNative>() };
+        winrt::check_bool(windowNative);
+        windowNative->get_WindowHandle(&Xellanix::Desktop::WindowHandle);
+
+        muw::AppWindow appWindow = this->AppWindow();
+
+        if (muw::AppWindowTitleBar::IsCustomizationSupported())
+        {
+            auto titleBar{ appWindow.TitleBar() };
+
+            titleBar.ExtendsContentIntoTitleBar(true);
+            titleBar.SetDragRectangles(
+                {
+                    Windows::Graphics::RectInt32{ 0, 0, static_cast<int32_t>(this->Bounds().Width), 32 }
+                }
+            );
+
+            if (auto presenter = appWindow.Presenter().try_as<muw::OverlappedPresenter>())
+            {
+                presenter.SetBorderAndTitleBar(true, false);
+            }
+        }
+        else
+        {
+            // Title bar customization using these APIs is currently
+            // supported only on Windows 11. In other cases, hide
+            // the custom title bar element.
+            AppTitleBar().Visibility(mux::Visibility::Collapsed);
+
+            // Show alternative UI for any functionality in
+            // the title bar, such as search.
+        }
     }
 
-    void MainWindow::myButton_Click(IInspectable const&, RoutedEventArgs const&)
+    bool MainWindow::GetCurrentTheme()
     {
-        myButton().Content(box_value(L"Clicked"));
+        bool isCurrentDarkMode = false;
+
+        if (m_rootElement == nullptr) m_rootElement = this->Content().try_as<winrt::mux::FrameworkElement>();
+
+        if (auto theme{ m_rootElement.RequestedTheme() }; theme == mux::ElementTheme::Dark)
+        {
+            isCurrentDarkMode = true;
+        }
+        else if (theme == mux::ElementTheme::Light)
+        {
+            isCurrentDarkMode = false;
+        }
+        else
+        {
+            if (auto currentApp{ mux::Application::Current() })
+            {
+                isCurrentDarkMode = currentApp.RequestedTheme() == mux::ApplicationTheme::Dark;
+            }
+        }
+
+        return isCurrentDarkMode;
+    }
+
+    void MainWindow::Window_SizeChanged(winrt::Windows::Foundation::IInspectable const&, mux::WindowSizeChangedEventArgs const& args)
+    {
+        if (muw::AppWindowTitleBar::IsCustomizationSupported())
+            this->AppWindow().TitleBar().SetDragRectangles(
+            {
+                Windows::Graphics::RectInt32{ 0, 0, static_cast<int32_t>(args.Size().Width), 32 }
+            }
+        );
+    }
+
+    void MainWindow::SwitchThemeByClick(winrt::muxc::SplitButton const&, winrt::muxc::SplitButtonClickEventArgs const&)
+    {
+        if (auto icon{ ThemeIcon() })
+        {
+            auto theme{ mux::ElementTheme::Light };
+            hstring style{ L"" };
+
+            if (GetCurrentTheme())
+            {
+                theme = mux::ElementTheme::Light;
+                style = L"\uE706";
+            }
+            else
+            {
+                theme = mux::ElementTheme::Dark;
+                style = L"\uE708";
+            }
+
+            m_rootElement.RequestedTheme(theme);
+            icon.Glyph(style);
+        }
+    }
+
+    void MainWindow::SwitchThemeByMenu(winrt::Windows::Foundation::IInspectable const& sender, winrt::mux::RoutedEventArgs const&)
+    {
+        if (auto item{ sender.try_as<muxc::MenuFlyoutItem>() })
+        {
+            auto mode = item.Text();
+
+            auto ChangeTheme = [&](mux::ElementTheme theme, mux::ElementTheme target, hstring const& style)
+            {
+                if (theme == target) return;
+
+                m_rootElement.RequestedTheme(target);
+
+                if (auto icon{ ThemeIcon() })
+                {
+                    icon.Glyph(style);
+                }
+            };
+
+            if (auto theme = m_rootElement.RequestedTheme(); mode == L"System Default")
+            {
+                ChangeTheme(theme, mux::ElementTheme::Default, L"\uF08C");
+            }
+            else if (mode == L"Dark")
+            {
+                ChangeTheme(theme, mux::ElementTheme::Dark, L"\uE708");
+            }
+            else if (mode == L"Light")
+            {
+                ChangeTheme(theme, mux::ElementTheme::Light, L"\uE706");
+            }
+        }
+    }
+
+    void MainWindow::MinimizeClicked(winrt::Windows::Foundation::IInspectable const&, mux::RoutedEventArgs const&)
+    {
+        if (auto presenter = this->AppWindow().Presenter().try_as<muw::OverlappedPresenter>())
+        {
+            presenter.Minimize();
+        }
+    }
+
+    void MainWindow::MaximizeClicked(winrt::Windows::Foundation::IInspectable const&, mux::RoutedEventArgs const&)
+    {
+        if (auto presenter = this->AppWindow().Presenter().try_as<muw::OverlappedPresenter>())
+        {
+            if (presenter.State() == muw::OverlappedPresenterState::Maximized)
+                presenter.Restore();
+            else
+                presenter.Maximize();
+        }
+    }
+
+    void MainWindow::CloseClicked(winrt::Windows::Foundation::IInspectable const&, mux::RoutedEventArgs const&)
+    {
+        this->Close();
     }
 }
