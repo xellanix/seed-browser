@@ -95,5 +95,53 @@
                 </Button>
             </StackPanel>
         </Grid>
+        <SplitView Grid.Row="1" Margin="12" DisplayMode="Inline" OpenPaneLength="256" IsPaneOpen="True" PaneBackground="Transparent">
+            <SplitView.Pane>
+                <Grid CornerRadius="8">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <TextBox Grid.Row="0" />
+                    <ItemsView Grid.Row="1">
+                        <ItemsView.Layout>
+                            <LinedFlowLayout ItemsStretch="Fill" LineHeight="160" LineSpacing="6" MinItemSpacing="6" />
+                        </ItemsView.Layout>
+                        <ItemsView.ItemTemplate>
+                            <DataTemplate>
+                                <ItemContainer>
+                                    <Image />
+                                </ItemContainer>
+                            </DataTemplate>
+                        </ItemsView.ItemTemplate>
+                    </ItemsView>
+                    <StackPanel Grid.Row="2">
+                        <TextBlock Text="Workspace name" />
+                        <ListView>
+                            <ListViewItem Content="Pinned Tab 1" />
+                            <ListViewItem Content="Pinned Tab 2" />
+                            <ListViewItem Content="Pinned Tab 3" />
+                        </ListView>
+                    </StackPanel>
+                    <ListView Grid.Row="3">
+                        <ListViewItem Content="Tab 1" />
+                        <ListViewItem Content="Tab 2" />
+                        <ListViewItem Content="Tab 3" />
+                    </ListView>
+                    <Grid Grid.Row="4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                    </Grid>
+                </Grid>
+            </SplitView.Pane>
+
+            <Grid Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" Margin="12,0,0,0" CornerRadius="8"></Grid>
+        </SplitView>
     </Grid>
 </Window>
