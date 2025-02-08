@@ -16,18 +16,69 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition />
         </Grid.RowDefinitions>
+        <SplitView Grid.RowSpan="2" Margin="12" DisplayMode="Inline" OpenPaneLength="256" IsPaneOpen="True" PaneBackground="Transparent">
+            <SplitView.Pane>
+                <Grid CornerRadius="8" RowSpacing="12" Margin="0,44,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <TextBox Grid.Row="0" />
+                    <ItemsView Grid.Row="1" ItemsSource="{x:Bind FavoritTabs, Mode=OneWay}">
+                        <ItemsView.Layout>
+                            <UniformGridLayout ItemsStretch="Fill" MinItemHeight="48" MinRowSpacing="8" MinColumnSpacing="8" />
+                        </ItemsView.Layout>
+                        <ItemsView.ItemTemplate>
+                            <DataTemplate x:DataType="local:Tab">
+                                <ItemContainer>
+                                    <Grid Padding="16,0" ToolTipService.ToolTip="{x:Bind Title}" CornerRadius="6" Background="{ThemeResource SolidBackgroundColorQuarternaryBrush}" BorderThickness="0,0,0,1" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}">
+                                        <Image Source="{x:Bind Favicon}" Height="24" Width="24" />
+                                    </Grid>
+                                </ItemContainer>
+                            </DataTemplate>
+                        </ItemsView.ItemTemplate>
+                    </ItemsView>
+                    <StackPanel Grid.Row="2">
+                        <TextBlock Text="Workspace name" />
+                        <ListView>
+                            <ListViewItem Content="Pinned Tab 1" />
+                            <ListViewItem Content="Pinned Tab 2" />
+                            <ListViewItem Content="Pinned Tab 3" />
+                        </ListView>
+                    </StackPanel>
+                    <ListView Grid.Row="3">
+                        <ListViewItem Content="Tab 1" />
+                        <ListViewItem Content="Tab 2" />
+                        <ListViewItem Content="Tab 3" />
+                    </ListView>
+                    <Grid Grid.Row="4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                    </Grid>
+                </Grid>
+            </SplitView.Pane>
+
+            <Grid Background="{ThemeResource SolidBackgroundColorQuarternaryBrush}" Margin="12,0,0,0" CornerRadius="8" BorderThickness="1,1,1,2" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}">
+                
+            </Grid>
+        </SplitView>
+        
         <Grid x:Name="AppTitleBar" Height="44" Padding="6,0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition x:Name="DragAreaColumn" Width="*"/>
                 <ColumnDefinition x:Name="RightPaddingColumn" Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <Rectangle Fill="{ThemeResource ColorDark2}" Width="75" Height="5" RadiusX="2.5" RadiusY="2.5" HorizontalAlignment="Center" VerticalAlignment="Center" Grid.ColumnSpan="3"
-                       ToolTipService.ToolTip="Personal Space"/>
-            <StackPanel Orientation="Horizontal" Grid.Column="2">
+            <StackPanel Orientation="Horizontal" Grid.Column="0">
                 <SplitButton Height="32" HorizontalAlignment="Right" Padding="0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Background="Transparent" BorderThickness="0" Grid.Column="1"
-                             Click="SwitchThemeByClick"
-                             ToolTipService.ToolTip="App Theme">
+                     Click="SwitchThemeByClick"
+                     ToolTipService.ToolTip="App Theme">
                     <SplitButton.Resources>
                         <ResourceDictionary>
                             <ResourceDictionary.ThemeDictionaries>
@@ -82,66 +133,18 @@
                 </SplitButton>
 
                 <Button Click="MinimizeClicked" Padding="16,8" Style="{ThemeResource TextButtonStyle}" IsTabStop="False" 
-                        ToolTipService.ToolTip="Minimize">
+                ToolTipService.ToolTip="Minimize">
                     <FontIcon FontSize="12" FontFamily="Segoe Fluent Icons" Glyph="&#xE921;" />
                 </Button>
                 <Button Click="MaximizeClicked" Padding="16,8" Style="{ThemeResource TextButtonStyle}" IsTabStop="False"
-                        ToolTipService.ToolTip="Maximize/Restore">
+                ToolTipService.ToolTip="Maximize/Restore">
                     <FontIcon FontSize="12" FontFamily="Segoe Fluent Icons" Glyph="&#xE923;" />
                 </Button>
                 <Button Click="CloseClicked" Padding="16,8" Style="{ThemeResource ErrorTextButtonStyle}" IsTabStop="False"
-                        ToolTipService.ToolTip="Close">
+                ToolTipService.ToolTip="Close">
                     <FontIcon FontSize="12" FontFamily="Segoe Fluent Icons" Glyph="&#xE8BB;" />
                 </Button>
             </StackPanel>
         </Grid>
-        <SplitView Grid.Row="1" Margin="12" DisplayMode="Inline" OpenPaneLength="256" IsPaneOpen="True" PaneBackground="Transparent">
-            <SplitView.Pane>
-                <Grid CornerRadius="8">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-                    <TextBox Grid.Row="0" />
-                    <ItemsView Grid.Row="1">
-                        <ItemsView.Layout>
-                            <LinedFlowLayout ItemsStretch="Fill" LineHeight="160" LineSpacing="6" MinItemSpacing="6" />
-                        </ItemsView.Layout>
-                        <ItemsView.ItemTemplate>
-                            <DataTemplate>
-                                <ItemContainer>
-                                    <Image />
-                                </ItemContainer>
-                            </DataTemplate>
-                        </ItemsView.ItemTemplate>
-                    </ItemsView>
-                    <StackPanel Grid.Row="2">
-                        <TextBlock Text="Workspace name" />
-                        <ListView>
-                            <ListViewItem Content="Pinned Tab 1" />
-                            <ListViewItem Content="Pinned Tab 2" />
-                            <ListViewItem Content="Pinned Tab 3" />
-                        </ListView>
-                    </StackPanel>
-                    <ListView Grid.Row="3">
-                        <ListViewItem Content="Tab 1" />
-                        <ListViewItem Content="Tab 2" />
-                        <ListViewItem Content="Tab 3" />
-                    </ListView>
-                    <Grid Grid.Row="4">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                    </Grid>
-                </Grid>
-            </SplitView.Pane>
-
-            <Grid Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" Margin="12,0,0,0" CornerRadius="8"></Grid>
-        </SplitView>
     </Grid>
 </Window>

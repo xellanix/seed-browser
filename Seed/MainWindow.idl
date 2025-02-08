@@ -1,8 +1,20 @@
 namespace Seed
 {
+    [bindable]
+    unsealed runtimeclass Tab : Microsoft.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        Tab();
+
+        String URL;
+        String Title;
+        String Favicon;
+    }
+
     [default_interface]
     runtimeclass MainWindow : Microsoft.UI.Xaml.Window
     {
         MainWindow();
+        
+        Windows.Foundation.Collections.IObservableVector<Tab> FavoritTabs;
     }
 }

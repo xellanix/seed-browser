@@ -3,6 +3,9 @@
 #if __has_include("MainWindow.g.cpp")
 #include "MainWindow.g.cpp"
 #endif
+#if __has_include("Tab.g.cpp")
+#include "Tab.g.cpp"
+#endif
 
 #pragma region WinUI Headers
 
@@ -21,6 +24,15 @@ namespace winrt::Seed::implementation
     MainWindow::MainWindow()
     {
         SetModernAppTitleBar();
+
+        for (int i = 0; i < 5; i++)
+        {
+            auto item = winrt::make_self<implementation::Tab>();
+            item->URL(L"https://google.com");
+            item->Title(L"Google");
+            item->Favicon(L"https://raw.githubusercontent.com/DennisSuitters/LibreICONS/refs/heads/master/svg/libre-gui-bookmark.svg");
+            m_favTabs.Append(*item);
+        }
     }
 
     void MainWindow::SetModernAppTitleBar()
@@ -38,7 +50,7 @@ namespace winrt::Seed::implementation
             titleBar.ExtendsContentIntoTitleBar(true);
             titleBar.SetDragRectangles(
                 {
-                    Windows::Graphics::RectInt32{ 0, 0, static_cast<int32_t>(this->Bounds().Width), 32 }
+                    Windows::Graphics::RectInt32{ 0, 0, static_cast<int32_t>(this->Bounds().Width), 12 }
                 }
             );
 
@@ -84,12 +96,12 @@ namespace winrt::Seed::implementation
         return isCurrentDarkMode;
     }
 
-    void MainWindow::Window_SizeChanged(winrt::Windows::Foundation::IInspectable const&, mux::WindowSizeChangedEventArgs const& args)
+    void MainWindow::Window_SizeChanged(wf::IInspectable const&, mux::WindowSizeChangedEventArgs const& args)
     {
         if (muw::AppWindowTitleBar::IsCustomizationSupported())
             this->AppWindow().TitleBar().SetDragRectangles(
             {
-                Windows::Graphics::RectInt32{ 0, 0, static_cast<int32_t>(args.Size().Width), 32 }
+                Windows::Graphics::RectInt32{ 0, 0, static_cast<int32_t>(args.Size().Width), 12 }
             }
         );
     }
@@ -117,7 +129,7 @@ namespace winrt::Seed::implementation
         }
     }
 
-    void MainWindow::SwitchThemeByMenu(winrt::Windows::Foundation::IInspectable const& sender, winrt::mux::RoutedEventArgs const&)
+    void MainWindow::SwitchThemeByMenu(wf::IInspectable const& sender, winrt::mux::RoutedEventArgs const&)
     {
         if (auto item{ sender.try_as<muxc::MenuFlyoutItem>() })
         {
@@ -150,7 +162,7 @@ namespace winrt::Seed::implementation
         }
     }
 
-    void MainWindow::MinimizeClicked(winrt::Windows::Foundation::IInspectable const&, mux::RoutedEventArgs const&)
+    void MainWindow::MinimizeClicked(wf::IInspectable const&, mux::RoutedEventArgs const&)
     {
         if (auto presenter = this->AppWindow().Presenter().try_as<muw::OverlappedPresenter>())
         {
@@ -158,7 +170,7 @@ namespace winrt::Seed::implementation
         }
     }
 
-    void MainWindow::MaximizeClicked(winrt::Windows::Foundation::IInspectable const&, mux::RoutedEventArgs const&)
+    void MainWindow::MaximizeClicked(wf::IInspectable const&, mux::RoutedEventArgs const&)
     {
         if (auto presenter = this->AppWindow().Presenter().try_as<muw::OverlappedPresenter>())
         {
@@ -169,7 +181,7 @@ namespace winrt::Seed::implementation
         }
     }
 
-    void MainWindow::CloseClicked(winrt::Windows::Foundation::IInspectable const&, mux::RoutedEventArgs const&)
+    void MainWindow::CloseClicked(wf::IInspectable const&, mux::RoutedEventArgs const&)
     {
         this->Close();
     }
