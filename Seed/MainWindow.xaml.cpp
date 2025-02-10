@@ -17,6 +17,7 @@
 #include "winrt/Windows.UI.Xaml.Interop.h"
 #include "winrt/Microsoft.UI.Xaml.Hosting.h"
 #include "winrt/Microsoft.UI.Xaml.Media.Animation.h"
+#include "winrt/Microsoft.UI.Xaml.Input.h"
 
 #pragma endregion
 
@@ -105,13 +106,11 @@ namespace winrt::Seed::implementation
         namespace muxh = Microsoft::UI::Xaml::Hosting;
 
         // Create a new tab that hosts a CEF-based browser.
-        auto tab = make_self<implementation::TabItem>(url);
-
-        // Display the tab’s content in the ContentGrid.
-        ContentGrid().Children().Clear();
-        ContentGrid().Children().Append(tab->Content());
+        auto tab = make_self<implementation::TabItem>(2ui8, url);
+        tab->RegisterURLBox(URLBox());
 
         m_tabItems.Append(*tab);
+        RegulerTabList().SelectedIndex(m_tabItems.Size() - 1);
     }
 
     bool MainWindow::SearchTabID(uint32_t search, uint32_t& id)
@@ -149,7 +148,7 @@ namespace winrt::Seed::implementation
         CreateNewTab(L"https://google.com");
     }
 
-    void MainWindow::RemoveTabClicked(wf::IInspectable const& sender, mux::RoutedEventArgs const& e)
+    void MainWindow::RemoveTabClicked(wf::IInspectable const& sender, mux::RoutedEventArgs const&)
     {
         const auto context{ sender.as<muxc::Button>().DataContext().as<Seed::TabItem>() };
 
@@ -158,6 +157,7 @@ namespace winrt::Seed::implementation
 
         context.CloseTab();
         m_tabItems.RemoveAt(index);
+        ContentGrid().Children().Clear();
     }
 
     void MainWindow::SelectedTabChanged(wf::IInspectable const& sender, muxc::SelectionChangedEventArgs const&)
@@ -170,7 +170,20 @@ namespace winrt::Seed::implementation
 
                 ContentGrid().Children().Clear();
                 ContentGrid().Children().Append(tab.Content());
+
+                URLBox().Text(tab.CurrentURL());
+
+                m_selectedTab = tab;
             }
+        }
+    }
+
+    void MainWindow::URLBox_KeyDown(wf::IInspectable const&, muxi::KeyRoutedEventArgs const& e)
+    {
+        if (e.Key() == Windows::System::VirtualKey::Enter)
+        {
+            if (m_selectedTab) m_selectedTab.Navigate(URLBox().Text());
+            else CreateNewTab(URLBox().Text());
         }
     }
 

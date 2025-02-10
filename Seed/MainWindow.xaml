@@ -26,7 +26,16 @@
                         <RowDefinition Height="*" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
-                    <TextBox Grid.Row="0" />
+                    <Grid Grid.Row="0" ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox x:Name="URLBox" Grid.Column="1" KeyDown="URLBox_KeyDown" />
+                        <Button Grid.Column="0" Padding="8" CornerRadius="6" VerticalAlignment="Center">
+                            <FontIcon FontSize="14" FontFamily="Segoe Fluent Icons" Glyph="&#xE72E;" />
+                        </Button>
+                    </Grid>
                     <ItemsView Grid.Row="1" ItemsSource="{x:Bind FavoritTabs, Mode=OneWay}">
                         <ItemsView.Layout>
                             <UniformGridLayout ItemsStretch="Fill" MinItemHeight="48" MinRowSpacing="8" MinColumnSpacing="8" />
@@ -55,6 +64,9 @@
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
                         <Button Grid.Row="0" Padding="16,8" Style="{ThemeResource TextButtonStyle}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Click="NewTabRequested">
+                            <Button.KeyboardAccelerators>
+                                <KeyboardAccelerator Modifiers="Control" Key="T" />
+                            </Button.KeyboardAccelerators>
                             <Grid ColumnSpacing="8">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />
@@ -65,7 +77,7 @@
                             </Grid>
                         </Button>
                         <ScrollViewer Grid.Row="1">
-                            <ListView ItemsSource="{x:Bind TabItems, Mode=OneWay}" SelectionChanged="SelectedTabChanged">
+                            <ListView x:Name="RegulerTabList" ItemsSource="{x:Bind TabItems, Mode=OneWay}" SelectionChanged="SelectedTabChanged">
                                 <ListView.ItemTemplate>
                                     <DataTemplate x:DataType="local:TabItem">
                                         <ListViewItem>
@@ -78,7 +90,7 @@
                                                 <Image Source="{x:Bind FaviconUri, Mode=OneWay}" Width="16" Height="16" VerticalAlignment="Center" />
                                                 <TextBlock Grid.Column="1" Text="{x:Bind Title, Mode=OneWay}" VerticalAlignment="Center" />
                                                 <Button Grid.Column="2" Background="Transparent" BorderBrush="Transparent" Padding="7" VerticalAlignment="Center" Click="RemoveTabClicked">
-                                                    <FontIcon FontSize="12" FontFamily="Segoe Fluent Icons" Glyph="&#xE8BB;" />
+                                                    <FontIcon FontSize="10" FontFamily="Segoe Fluent Icons" Glyph="&#xE8BB;" />
                                                 </Button>
                                             </Grid>
                                         </ListViewItem>

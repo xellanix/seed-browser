@@ -16,6 +16,7 @@ namespace winrt
     namespace mux = Microsoft::UI::Xaml;
     namespace muxc = Microsoft::UI::Xaml::Controls;
     namespace muxd = Microsoft::UI::Xaml::Data;
+    namespace muxi = Microsoft::UI::Xaml::Input;
     namespace muxma = Microsoft::UI::Xaml::Media::Animation;
     namespace muxn = Microsoft::UI::Xaml::Navigation;
     namespace muw = Microsoft::UI::Windowing;
@@ -68,7 +69,7 @@ namespace winrt::Seed::implementation
 
     struct TabItem : TabItemT<TabItem>
     {
-        TabItem(hstring const& initialUrl) : m_currentUrl(initialUrl)
+        TabItem(uint8_t type, hstring const& initialUrl) : m_type(type), m_currentUrl(initialUrl)
         {
             static uint32_t count = 0;
             m_id = count++;
@@ -84,6 +85,16 @@ namespace winrt::Seed::implementation
 
         uint32_t Id() const { return m_id; }
 
+        uint8_t Type() const { return m_type; }
+        void Type(uint8_t value)
+        {
+            if (m_type != value)
+            {
+                m_type = value;
+                RaisePropertyChanged(L"Type");
+            }
+        }
+
         mux::UIElement Content() const { return m_content; }
 
         hstring SavedStateURL() const { return m_savedUrl; }
@@ -94,9 +105,6 @@ namespace winrt::Seed::implementation
             if (m_currentUrl != value)
             {
                 m_currentUrl = value;
-                m_content.Source(wf::Uri(value));
-                m_title = m_content.CoreWebView2().DocumentTitle();
-
                 RaisePropertyChanged(L"CurrentURL");
             }
         }
@@ -123,7 +131,7 @@ namespace winrt::Seed::implementation
 
         void ActivateTab()
         {
-            if (m_content && m_content.CoreWebView2().Source() == L"about:blank" && !m_savedUrl.empty())
+            if (m_content && m_content.Source().ToString() == L"about:blank" && !m_savedUrl.empty())
             {
                 m_content.Source(wf::Uri(m_savedUrl));
                 m_currentUrl = m_savedUrl;
@@ -134,14 +142,32 @@ namespace winrt::Seed::implementation
                 m_sleepTimer.Start();
         }
 
+        void Navigate(hstring const& url)
+        {
+            CurrentURL(url);
+            m_content.Source(wf::Uri(url));
+            m_title = m_content.CoreWebView2().DocumentTitle();
+        }
+
         void CloseTab()
         {
-            m_content.Close();
+            m_faviconRevoker.revoke();
+            m_titleRevoker.revoke();
+            m_sourceRevoker.revoke();
+            m_devProtocolRevoker.revoke();
             m_sleepRevoker.revoke();
             m_initRevoker.revoke();
-            m_titleRevoker.revoke();
+            
+            m_content.Close();
+
             m_sleepTimer = nullptr;
             m_content = nullptr;
+            m_urlBox = nullptr;
+        }
+
+        void RegisterURLBox(muxc::TextBox const& urlBox)
+        {
+            m_urlBox = urlBox;
         }
 
         event_token PropertyChanged(muxd::PropertyChangedEventHandler const& handler) { return m_propertyChanged.add(handler); }
@@ -153,17 +179,43 @@ namespace winrt::Seed::implementation
     private:
         void CoreInitialize(muxc::WebView2 const&, muxc::CoreWebView2InitializedEventArgs const&)
         {
-            Title(m_content.CoreWebView2().DocumentTitle());
+            auto core{ m_content.CoreWebView2() };
 
-            FaviconUri(m_content.CoreWebView2().FaviconUri());
+            core.Profile().PreferredColorScheme(mwwv2c::CoreWebView2PreferredColorScheme::Dark);
 
-            m_titleRevoker = m_content.CoreWebView2().DocumentTitleChanged(auto_revoke, { this, &TabItem::TitleChanged });
+            Title(core.DocumentTitle());
+            FaviconUri(core.FaviconUri());
+
+            m_sourceRevoker = core.SourceChanged(auto_revoke, { this, &TabItem::SourceChanged });
+            m_faviconRevoker = core.FaviconChanged(auto_revoke, { this, &TabItem::FaviconChanged });
+            m_titleRevoker = core.DocumentTitleChanged(auto_revoke, { this, &TabItem::TitleChanged });
+
+            auto receiver{ core.GetDevToolsProtocolEventReceiver(L"Security.visibleSecurityStateChanged") };
+            m_devProtocolRevoker = receiver.DevToolsProtocolEventReceived(auto_revoke, { this, &TabItem::DevToolsProtocolEventReceived });
+        }
+
+        void FaviconChanged(mwwv2c::CoreWebView2 const& sender, wf::IInspectable)
+        {
+            FaviconUri(sender.FaviconUri());
+        }
+
+        void SourceChanged(mwwv2c::CoreWebView2 const& sender, mwwv2c::CoreWebView2SourceChangedEventArgs const&)
+        {
+            if (m_urlBox) m_urlBox.Text(sender.Source());
+            CurrentURL(sender.Source());
         }
 
         void TitleChanged(mwwv2c::CoreWebView2 const& sender, wf::IInspectable const&)
         {
             Title(sender.DocumentTitle());
-            FaviconUri(m_content.CoreWebView2().FaviconUri());
+        }
+
+        void DevToolsProtocolEventReceived(mwwv2c::CoreWebView2, mwwv2c::CoreWebView2DevToolsProtocolEventReceivedEventArgs const& e)
+        {
+            auto json = e.ParameterObjectAsJson();
+            auto ses = e.SessionId();
+
+            MessageBox(NULL, json.c_str(), L"", MB_OK);
         }
 
         void InitializeSleepTimer()
@@ -195,16 +247,23 @@ namespace winrt::Seed::implementation
         }
 
         uint32_t m_id = 0;
+        uint8_t m_type = 2;
         muxc::WebView2 m_content{ nullptr };
         hstring m_savedUrl;
         hstring m_currentUrl;
         hstring m_title;
         hstring m_favicon = L"https://google.com/favicon.ico";
 
+        muxc::TextBox m_urlBox{ nullptr };
+
         mud::DispatcherQueueTimer m_sleepTimer{ nullptr };
         mud::DispatcherQueueTimer::Tick_revoker m_sleepRevoker;
         muxc::WebView2::CoreWebView2Initialized_revoker m_initRevoker;
+        mwwv2c::CoreWebView2::SourceChanged_revoker m_sourceRevoker;
+        mwwv2c::CoreWebView2::FaviconChanged_revoker m_faviconRevoker;
         mwwv2c::CoreWebView2::DocumentTitleChanged_revoker m_titleRevoker;
+        mwwv2c::CoreWebView2DevToolsProtocolEventReceiver::DevToolsProtocolEventReceived_revoker m_devProtocolRevoker;
+
         winrt::event<muxd::PropertyChangedEventHandler> m_propertyChanged;
     };
 
@@ -214,6 +273,8 @@ namespace winrt::Seed::implementation
         winrt::mux::FrameworkElement m_rootElement{ nullptr };
         wfc::IObservableVector<Seed::Tab> m_favTabs{ winrt::single_threaded_observable_vector<Seed::Tab>() };
         wfc::IObservableVector<Seed::TabItem> m_tabItems{ winrt::single_threaded_observable_vector<Seed::TabItem>() };
+
+        Seed::TabItem m_selectedTab{ nullptr };
 
         void SetModernAppTitleBar();
         bool GetCurrentTheme();
@@ -256,6 +317,8 @@ namespace winrt::Seed::implementation
         void NewTabRequested(wf::IInspectable const& sender, mux::RoutedEventArgs const& e);
         void RemoveTabClicked(wf::IInspectable const& sender, mux::RoutedEventArgs const& e);
         void SelectedTabChanged(wf::IInspectable const& sender, muxc::SelectionChangedEventArgs const& e);
+
+        void URLBox_KeyDown(wf::IInspectable const& sender, muxi::KeyRoutedEventArgs const& e);
     };
 }
 

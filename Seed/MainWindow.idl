@@ -13,9 +13,10 @@ namespace Seed
     [bindable]
     runtimeclass TabItem : Microsoft.UI.Xaml.Data.INotifyPropertyChanged
     {
-        TabItem(String InitialUrl);
+        TabItem(UInt8 type, String InitialUrl);
         
         UInt32 Id{ get; };
+        UInt8 Type;
         Microsoft.UI.Xaml.UIElement Content{ get; };
         String SavedStateURL{ get; };
         String CurrentURL;
@@ -23,7 +24,9 @@ namespace Seed
         String FaviconUri{ get; };
 
         void ActivateTab();
+        void Navigate(String url);
         void CloseTab();
+        void RegisterURLBox(Microsoft.UI.Xaml.Controls.TextBox urlBox);
     }
 
     [default_interface]

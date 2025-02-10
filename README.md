@@ -16,7 +16,12 @@ Task list:
 [ ] Footer area: workspace list
 [ ] Footer area: download button
 [ ] Footer area: toggle on/off sidebar
-[ ] Improve url bar UI
-[ ] Add navigate (go) button
+[x] Improve url bar UI
+[x] Add url bar functionality
+[ ] Go back and forward
+[ ] Preferred color scheme
 [ ] Show secure protocol icon
 [ ] Enhance title bar
+[ ] Identify is it url or text
+[ ] Keyboard accelerator
+[ ] Tooltip hover
