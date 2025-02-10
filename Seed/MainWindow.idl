@@ -8,6 +8,22 @@ namespace Seed
         String URL;
         String Title;
         String Favicon;
+}
+
+    [bindable]
+    runtimeclass TabItem : Microsoft.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        TabItem(String InitialUrl);
+        
+        UInt32 Id{ get; };
+        Microsoft.UI.Xaml.UIElement Content{ get; };
+        String SavedStateURL{ get; };
+        String CurrentURL;
+        String Title;
+        String FaviconUri{ get; };
+
+        void ActivateTab();
+        void CloseTab();
     }
 
     [default_interface]
@@ -16,5 +32,6 @@ namespace Seed
         MainWindow();
         
         Windows.Foundation.Collections.IObservableVector<Tab> FavoritTabs;
+        Windows.Foundation.Collections.IObservableVector<TabItem> TabItems;
     }
 }

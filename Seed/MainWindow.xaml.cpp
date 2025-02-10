@@ -6,12 +6,16 @@
 #if __has_include("Tab.g.cpp")
 #include "Tab.g.cpp"
 #endif
+#if __has_include("TabItem.g.cpp")
+#include "TabItem.g.cpp"
+#endif
 
 #pragma region WinUI Headers
 
 #include "microsoft.ui.xaml.window.h" // for IWindowNative
 #include "winrt/Microsoft.UI.Windowing.h"
 #include "winrt/Windows.UI.Xaml.Interop.h"
+#include "winrt/Microsoft.UI.Xaml.Hosting.h"
 #include "winrt/Microsoft.UI.Xaml.Media.Animation.h"
 
 #pragma endregion
@@ -96,6 +100,80 @@ namespace winrt::Seed::implementation
         return isCurrentDarkMode;
     }
 
+    void MainWindow::CreateNewTab(winrt::hstring const& url)
+    {
+        namespace muxh = Microsoft::UI::Xaml::Hosting;
+
+        // Create a new tab that hosts a CEF-based browser.
+        auto tab = make_self<implementation::TabItem>(url);
+
+        // Display the tab’s content in the ContentGrid.
+        ContentGrid().Children().Clear();
+        ContentGrid().Children().Append(tab->Content());
+
+        m_tabItems.Append(*tab);
+    }
+
+    bool MainWindow::SearchTabID(uint32_t search, uint32_t& id)
+    {
+        uint32_t l = 0, h = m_tabItems.Size() - 1;
+        if (m_tabItems.GetAt(l).Id() == search)
+        {
+            id = l;
+            return true;
+        }
+
+        while (l <= h)
+        {
+            uint32_t m = l + ((h - l) / 2);
+
+            if (m_tabItems.GetAt(m).Id() == search)
+            {
+                id = m;
+                return true;
+            }
+            else if (m_tabItems.GetAt(m).Id() < search) l = m + 1;
+            else if (m_tabItems.GetAt(m).Id() > search) h = m - 1;
+        }
+
+        return false;
+    }
+
+    void MainWindow::Grid_Loaded(wf::IInspectable const&, mux::RoutedEventArgs const&)
+    {
+        
+    }
+
+    void MainWindow::NewTabRequested(wf::IInspectable const&, mux::RoutedEventArgs const&)
+    {
+        CreateNewTab(L"https://google.com");
+    }
+
+    void MainWindow::RemoveTabClicked(wf::IInspectable const& sender, mux::RoutedEventArgs const& e)
+    {
+        const auto context{ sender.as<muxc::Button>().DataContext().as<Seed::TabItem>() };
+
+        uint32_t index = 0;
+        SearchTabID(context.Id(), index);
+
+        context.CloseTab();
+        m_tabItems.RemoveAt(index);
+    }
+
+    void MainWindow::SelectedTabChanged(wf::IInspectable const& sender, muxc::SelectionChangedEventArgs const&)
+    {
+        if (auto lv{ sender.try_as<muxc::ListView>() })
+        {
+            if (auto tab{ lv.SelectedItem().try_as<Seed::TabItem>() })
+            {
+                tab.ActivateTab();
+
+                ContentGrid().Children().Clear();
+                ContentGrid().Children().Append(tab.Content());
+            }
+        }
+    }
+
     void MainWindow::Window_SizeChanged(wf::IInspectable const&, mux::WindowSizeChangedEventArgs const& args)
     {
         if (muw::AppWindowTitleBar::IsCustomizationSupported())
@@ -106,7 +184,7 @@ namespace winrt::Seed::implementation
         );
     }
 
-    void MainWindow::SwitchThemeByClick(winrt::muxc::SplitButton const&, winrt::muxc::SplitButtonClickEventArgs const&)
+    void MainWindow::SwitchThemeByClick(muxc::SplitButton const&, muxc::SplitButtonClickEventArgs const&)
     {
         if (auto icon{ ThemeIcon() })
         {
@@ -129,7 +207,7 @@ namespace winrt::Seed::implementation
         }
     }
 
-    void MainWindow::SwitchThemeByMenu(wf::IInspectable const& sender, winrt::mux::RoutedEventArgs const&)
+    void MainWindow::SwitchThemeByMenu(wf::IInspectable const& sender, mux::RoutedEventArgs const&)
     {
         if (auto item{ sender.try_as<muxc::MenuFlyoutItem>() })
         {

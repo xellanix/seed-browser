@@ -11,7 +11,7 @@
     Title="Seed Browser"
     SizeChanged="Window_SizeChanged">
 
-    <Grid Background="{ThemeResource SolidBackgroundColorSecondaryBrush}">
+    <Grid Background="{ThemeResource SolidBackgroundColorSecondaryBrush}" Loaded="Grid_Loaded">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition />
@@ -23,7 +23,7 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
                     <TextBox Grid.Row="0" />
@@ -49,11 +49,44 @@
                             <ListViewItem Content="Pinned Tab 3" />
                         </ListView>
                     </StackPanel>
-                    <ListView Grid.Row="3">
-                        <ListViewItem Content="Tab 1" />
-                        <ListViewItem Content="Tab 2" />
-                        <ListViewItem Content="Tab 3" />
-                    </ListView>
+                    <Grid Grid.Row="3">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <Button Grid.Row="0" Padding="16,8" Style="{ThemeResource TextButtonStyle}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Click="NewTabRequested">
+                            <Grid ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <FontIcon FontSize="12" FontFamily="Segoe Fluent Icons" Glyph="&#xF8AA;" />
+                                <TextBlock Grid.Column="1" Text="New tab" />
+                            </Grid>
+                        </Button>
+                        <ScrollViewer Grid.Row="1">
+                            <ListView ItemsSource="{x:Bind TabItems, Mode=OneWay}" SelectionChanged="SelectedTabChanged">
+                                <ListView.ItemTemplate>
+                                    <DataTemplate x:DataType="local:TabItem">
+                                        <ListViewItem>
+                                            <Grid ColumnSpacing="6">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <Image Source="{x:Bind FaviconUri, Mode=OneWay}" Width="16" Height="16" VerticalAlignment="Center" />
+                                                <TextBlock Grid.Column="1" Text="{x:Bind Title, Mode=OneWay}" VerticalAlignment="Center" />
+                                                <Button Grid.Column="2" Background="Transparent" BorderBrush="Transparent" Padding="7" VerticalAlignment="Center" Click="RemoveTabClicked">
+                                                    <FontIcon FontSize="12" FontFamily="Segoe Fluent Icons" Glyph="&#xE8BB;" />
+                                                </Button>
+                                            </Grid>
+                                        </ListViewItem>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+                        </ScrollViewer>
+                    </Grid>
                     <Grid Grid.Row="4">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
@@ -64,8 +97,8 @@
                 </Grid>
             </SplitView.Pane>
 
-            <Grid Background="{ThemeResource SolidBackgroundColorQuarternaryBrush}" Margin="12,0,0,0" CornerRadius="8" BorderThickness="1,1,1,2" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}">
-                
+            <Grid x:Name="ContentGrid" Background="{ThemeResource SolidBackgroundColorQuarternaryBrush}" Margin="12,0,0,0" CornerRadius="8" BorderThickness="1,1,1,2" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}">
+                <WebView2 Source="about:blank" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
             </Grid>
         </SplitView>
         

@@ -330,7 +330,7 @@ namespace Xellanix::Utilities
 
 		while (start <= end)
 		{
-			auto mid = start + (end - start) / 2;
+			auto mid = start + ((end - start) / 2);
 
 			if (vec[mid] == lookup) return mid;
 			else if (vec[mid] < lookup) start = mid + 1;
@@ -349,7 +349,7 @@ namespace Xellanix::Utilities
 
 		while (start <= end)
 		{
-			auto mid = start + (end - start) / 2;
+			auto mid = start + ((end - start) / 2);
 
 			if (vec[mid] == lookup) return mid;
 			else if (vec[mid] > lookup) start = mid + 1;
