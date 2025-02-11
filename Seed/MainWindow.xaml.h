@@ -80,6 +80,9 @@ namespace winrt::Seed::implementation
             m_content.EnsureCoreWebView2Async();
             m_initRevoker = m_content.CoreWebView2Initialized(auto_revoke, { this, &TabItem::CoreInitialize });
 
+            m_backToken = m_content.RegisterPropertyChangedCallback(muxc::WebView2::CanGoBackProperty(), { this, &TabItem::WebView2DepsChanged });
+            m_forwardToken = m_content.RegisterPropertyChangedCallback(muxc::WebView2::CanGoForwardProperty(), { this, &TabItem::WebView2DepsChanged });
+
             InitializeSleepTimer();
         }
 
@@ -154,21 +157,25 @@ namespace winrt::Seed::implementation
             m_faviconRevoker.revoke();
             m_titleRevoker.revoke();
             m_sourceRevoker.revoke();
-            m_devProtocolRevoker.revoke();
             m_sleepRevoker.revoke();
             m_initRevoker.revoke();
             
+            m_content.UnregisterPropertyChangedCallback(muxc::WebView2::CanGoBackProperty(), m_backToken);
+            m_content.UnregisterPropertyChangedCallback(muxc::WebView2::CanGoForwardProperty(), m_forwardToken);
+
             m_content.Close();
 
             m_sleepTimer = nullptr;
             m_content = nullptr;
             m_urlBox = nullptr;
+            m_backBtn = nullptr;
+            m_forwardBtn = nullptr;
         }
 
-        void RegisterURLBox(muxc::TextBox const& urlBox)
-        {
-            m_urlBox = urlBox;
-        }
+        void RegisterURLBox(muxc::TextBox const& urlBox) { m_urlBox = urlBox; }
+
+        void RegisterGoBackButton(muxc::Control const& btn) { m_backBtn = btn; }
+        void RegisterGoForwardButton(muxc::Control const& btn) { m_forwardBtn = btn; }
 
         event_token PropertyChanged(muxd::PropertyChangedEventHandler const& handler) { return m_propertyChanged.add(handler); }
         void PropertyChanged(event_token const& token) noexcept
@@ -189,15 +196,9 @@ namespace winrt::Seed::implementation
             m_sourceRevoker = core.SourceChanged(auto_revoke, { this, &TabItem::SourceChanged });
             m_faviconRevoker = core.FaviconChanged(auto_revoke, { this, &TabItem::FaviconChanged });
             m_titleRevoker = core.DocumentTitleChanged(auto_revoke, { this, &TabItem::TitleChanged });
-
-            auto receiver{ core.GetDevToolsProtocolEventReceiver(L"Security.visibleSecurityStateChanged") };
-            m_devProtocolRevoker = receiver.DevToolsProtocolEventReceived(auto_revoke, { this, &TabItem::DevToolsProtocolEventReceived });
         }
 
-        void FaviconChanged(mwwv2c::CoreWebView2 const& sender, wf::IInspectable)
-        {
-            FaviconUri(sender.FaviconUri());
-        }
+        void FaviconChanged(mwwv2c::CoreWebView2 const& sender, wf::IInspectable) { FaviconUri(sender.FaviconUri()); }
 
         void SourceChanged(mwwv2c::CoreWebView2 const& sender, mwwv2c::CoreWebView2SourceChangedEventArgs const&)
         {
@@ -205,17 +206,12 @@ namespace winrt::Seed::implementation
             CurrentURL(sender.Source());
         }
 
-        void TitleChanged(mwwv2c::CoreWebView2 const& sender, wf::IInspectable const&)
-        {
-            Title(sender.DocumentTitle());
-        }
+        void TitleChanged(mwwv2c::CoreWebView2 const& sender, wf::IInspectable const&) { Title(sender.DocumentTitle()); }
 
-        void DevToolsProtocolEventReceived(mwwv2c::CoreWebView2, mwwv2c::CoreWebView2DevToolsProtocolEventReceivedEventArgs const& e)
+        void WebView2DepsChanged(DependencyObject const& sender, DependencyProperty const& e)
         {
-            auto json = e.ParameterObjectAsJson();
-            auto ses = e.SessionId();
-
-            MessageBox(NULL, json.c_str(), L"", MB_OK);
+            if (e == muxc::WebView2::CanGoBackProperty()) m_backBtn.IsEnabled(unbox_value<bool>(sender.GetValue(e)));
+            else if (e == muxc::WebView2::CanGoForwardProperty()) m_forwardBtn.IsEnabled(unbox_value<bool>(sender.GetValue(e)));
         }
 
         void InitializeSleepTimer()
@@ -255,6 +251,8 @@ namespace winrt::Seed::implementation
         hstring m_favicon = L"https://google.com/favicon.ico";
 
         muxc::TextBox m_urlBox{ nullptr };
+        muxc::Control m_backBtn{ nullptr };
+        muxc::Control m_forwardBtn{ nullptr };
 
         mud::DispatcherQueueTimer m_sleepTimer{ nullptr };
         mud::DispatcherQueueTimer::Tick_revoker m_sleepRevoker;
@@ -262,7 +260,9 @@ namespace winrt::Seed::implementation
         mwwv2c::CoreWebView2::SourceChanged_revoker m_sourceRevoker;
         mwwv2c::CoreWebView2::FaviconChanged_revoker m_faviconRevoker;
         mwwv2c::CoreWebView2::DocumentTitleChanged_revoker m_titleRevoker;
-        mwwv2c::CoreWebView2DevToolsProtocolEventReceiver::DevToolsProtocolEventReceived_revoker m_devProtocolRevoker;
+
+        int64_t m_backToken;
+        int64_t m_forwardToken;
 
         winrt::event<muxd::PropertyChangedEventHandler> m_propertyChanged;
     };
@@ -276,12 +276,16 @@ namespace winrt::Seed::implementation
 
         Seed::TabItem m_selectedTab{ nullptr };
 
+        double GetScaleAdjustment();
         void SetModernAppTitleBar();
         bool GetCurrentTheme();
 
         void CreateNewTab(winrt::hstring const& url);
 
         bool SearchTabID(uint32_t search, uint32_t& id);
+
+        bool TryGoBack();
+        bool TryGoForward();
 
     public:
         MainWindow();
@@ -312,13 +316,20 @@ namespace winrt::Seed::implementation
         void MinimizeClicked(wf::IInspectable const& sender, mux::RoutedEventArgs const& e);
         void MaximizeClicked(wf::IInspectable const& sender, mux::RoutedEventArgs const& e);
         void CloseClicked(wf::IInspectable const& sender, mux::RoutedEventArgs const& e);
+
         void Grid_Loaded(wf::IInspectable const& sender, mux::RoutedEventArgs const& e);
+        void Grid_PointerPressed(wf::IInspectable const& sender, muxi::PointerRoutedEventArgs const& e);
         
         void NewTabRequested(wf::IInspectable const& sender, mux::RoutedEventArgs const& e);
         void RemoveTabClicked(wf::IInspectable const& sender, mux::RoutedEventArgs const& e);
         void SelectedTabChanged(wf::IInspectable const& sender, muxc::SelectionChangedEventArgs const& e);
 
+        void GoBackClicked(wf::IInspectable const& sender, mux::RoutedEventArgs const& e);
+        void GoForwardClicked(wf::IInspectable const& sender, mux::RoutedEventArgs const& e);
+        void ReloadClicked(wf::IInspectable const& sender, mux::RoutedEventArgs const& e);
         void URLBox_KeyDown(wf::IInspectable const& sender, muxi::KeyRoutedEventArgs const& e);
+        
+        void FocusURLBarInvoked(muxi::KeyboardAccelerator const& sender, muxi::KeyboardAcceleratorInvokedEventArgs const& args);
     };
 }
 

@@ -11,12 +11,17 @@
     Title="Seed Browser"
     SizeChanged="Window_SizeChanged">
 
-    <Grid Background="{ThemeResource SolidBackgroundColorSecondaryBrush}" Loaded="Grid_Loaded">
+    <Grid Background="{ThemeResource SolidBackgroundColorSecondaryBrush}" Loaded="Grid_Loaded" PointerPressed="Grid_PointerPressed">
+        <Grid.Resources>
+            <ResourceDictionary>
+                <x:Double x:Key="SidebarWidth">276</x:Double>
+            </ResourceDictionary>
+        </Grid.Resources>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition />
         </Grid.RowDefinitions>
-        <SplitView Grid.RowSpan="2" Margin="12" DisplayMode="Inline" OpenPaneLength="256" IsPaneOpen="True" PaneBackground="Transparent">
+        <SplitView Grid.RowSpan="2" Margin="12" DisplayMode="Inline" OpenPaneLength="{StaticResource SidebarWidth}" IsPaneOpen="True" PaneBackground="Transparent">
             <SplitView.Pane>
                 <Grid CornerRadius="8" RowSpacing="12" Margin="0,44,0,0">
                     <Grid.RowDefinitions>
@@ -26,30 +31,44 @@
                         <RowDefinition Height="*" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
+                    
+                    <!-- URL Bar Area -->
                     <Grid Grid.Row="0" ColumnSpacing="8">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
-                        <TextBox x:Name="URLBox" Grid.Column="1" KeyDown="URLBox_KeyDown" />
-                        <Button Grid.Column="0" Padding="8" CornerRadius="6" VerticalAlignment="Center">
-                            <FontIcon FontSize="14" FontFamily="Segoe Fluent Icons" Glyph="&#xE72E;" />
-                        </Button>
+                        <Border Grid.Column="0" Padding="8" CornerRadius="6" VerticalAlignment="Center"
+                                Background="{ThemeResource ButtonBackground}"
+                                BorderBrush="{ThemeResource ButtonBorderBrush}"
+                                BorderThickness="{ThemeResource ButtonBorderThemeThickness}"
+                                ToolTipService.ToolTip="Secure">
+                            <FontIcon FontSize="14" FontFamily="Segoe Fluent Icons" Glyph="&#xE72E;" Foreground="{ThemeResource ButtonForeground}" />
+                        </Border>
+                        <TextBox x:Name="URLBox" Grid.Column="1" KeyDown="URLBox_KeyDown">
+                            <TextBox.KeyboardAccelerators>
+                                <KeyboardAccelerator Modifiers="Control" Key="L" Invoked="FocusURLBarInvoked" />
+                            </TextBox.KeyboardAccelerators>
+                        </TextBox>
                     </Grid>
+                    
+                    <!-- Favorite Tabs Area -->
                     <ItemsView Grid.Row="1" ItemsSource="{x:Bind FavoritTabs, Mode=OneWay}">
                         <ItemsView.Layout>
-                            <UniformGridLayout ItemsStretch="Fill" MinItemHeight="48" MinRowSpacing="8" MinColumnSpacing="8" />
+                            <UniformGridLayout ItemsStretch="Fill" MinItemHeight="56" MinItemWidth="64" MinRowSpacing="8" MinColumnSpacing="8" />
                         </ItemsView.Layout>
                         <ItemsView.ItemTemplate>
                             <DataTemplate x:DataType="local:Tab">
                                 <ItemContainer>
-                                    <Grid Padding="16,0" ToolTipService.ToolTip="{x:Bind Title}" CornerRadius="6" Background="{ThemeResource SolidBackgroundColorQuarternaryBrush}" BorderThickness="0,0,0,1" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}">
+                                    <Grid ToolTipService.ToolTip="{x:Bind Title}" CornerRadius="6" Background="{ThemeResource SolidBackgroundColorQuarternaryBrush}" BorderThickness="0,0,0,1" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}">
                                         <Image Source="{x:Bind Favicon}" Height="24" Width="24" />
                                     </Grid>
                                 </ItemContainer>
                             </DataTemplate>
                         </ItemsView.ItemTemplate>
                     </ItemsView>
+                    
+                    <!-- Workspace Area -->
                     <StackPanel Grid.Row="2">
                         <TextBlock Text="Workspace name" />
                         <ListView>
@@ -58,12 +77,18 @@
                             <ListViewItem Content="Pinned Tab 3" />
                         </ListView>
                     </StackPanel>
+                    
+                    <!-- Reguler Tab Area -->
                     <Grid Grid.Row="3">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
-                        <Button Grid.Row="0" Padding="16,8" Style="{ThemeResource TextButtonStyle}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Click="NewTabRequested">
+                        <Button Grid.Row="0" Padding="16,8" Style="{ThemeResource TextButtonStyle}"
+                                HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                ToolTipService.ToolTip="New Tab (Ctrl+T)"
+                                Click="NewTabRequested">
                             <Button.KeyboardAccelerators>
                                 <KeyboardAccelerator Modifiers="Control" Key="T" />
                             </Button.KeyboardAccelerators>
@@ -71,34 +96,42 @@
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
-                                <FontIcon FontSize="12" FontFamily="Segoe Fluent Icons" Glyph="&#xF8AA;" />
-                                <TextBlock Grid.Column="1" Text="New tab" />
+                                <FontIcon FontSize="12" FontFamily="Segoe Fluent Icons" Glyph="&#xF8AA;" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="1" Text="New tab" VerticalAlignment="Center" />
+                                <Border Grid.Column="2" Background="{ThemeResource ControlFillColorDefaultBrush}"
+                                        BorderThickness="1" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                        CornerRadius="4" Padding="6,4">
+                                    <TextBlock Text="Ctrl+T" FontSize="12" FontWeight="Normal" VerticalAlignment="Center" />
+                                </Border>
                             </Grid>
                         </Button>
-                        <ScrollViewer Grid.Row="1">
-                            <ListView x:Name="RegulerTabList" ItemsSource="{x:Bind TabItems, Mode=OneWay}" SelectionChanged="SelectedTabChanged">
-                                <ListView.ItemTemplate>
-                                    <DataTemplate x:DataType="local:TabItem">
-                                        <ListViewItem>
-                                            <Grid ColumnSpacing="6">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="Auto" />
-                                                    <ColumnDefinition Width="*" />
-                                                    <ColumnDefinition Width="Auto" />
-                                                </Grid.ColumnDefinitions>
-                                                <Image Source="{x:Bind FaviconUri, Mode=OneWay}" Width="16" Height="16" VerticalAlignment="Center" />
-                                                <TextBlock Grid.Column="1" Text="{x:Bind Title, Mode=OneWay}" VerticalAlignment="Center" />
-                                                <Button Grid.Column="2" Background="Transparent" BorderBrush="Transparent" Padding="7" VerticalAlignment="Center" Click="RemoveTabClicked">
-                                                    <FontIcon FontSize="10" FontFamily="Segoe Fluent Icons" Glyph="&#xE8BB;" />
-                                                </Button>
-                                            </Grid>
-                                        </ListViewItem>
-                                    </DataTemplate>
-                                </ListView.ItemTemplate>
-                            </ListView>
-                        </ScrollViewer>
+
+                        <ListView x:Name="RegulerTabList" Grid.Row="1" Margin="0" Padding="0" ItemsSource="{x:Bind TabItems, Mode=OneWay}" SelectionChanged="SelectedTabChanged">
+                            <ListView.ItemTemplate>
+                                <DataTemplate x:DataType="local:TabItem">
+                                    <ListViewItem Margin="-4,-2" Padding="16,8"
+                                                  ToolTipService.ToolTip="{x:Bind CurrentURL, Mode=OneWay}">
+                                        <Grid ColumnSpacing="8">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <Image Source="{x:Bind FaviconUri, Mode=OneWay}" Width="16" Height="16" VerticalAlignment="Center" />
+                                            <TextBlock Grid.Column="1" Text="{x:Bind Title, Mode=OneWay}" VerticalAlignment="Center" />
+                                            <Button Grid.Column="2" Background="Transparent" BorderBrush="Transparent" Padding="7" VerticalAlignment="Center" Click="RemoveTabClicked">
+                                                <FontIcon FontSize="10" FontFamily="Segoe Fluent Icons" Glyph="&#xE8BB;" />
+                                            </Button>
+                                        </Grid>
+                                    </ListViewItem>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
                     </Grid>
+                    
+                    <!-- Footer Area -->
                     <Grid Grid.Row="4">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
@@ -109,87 +142,137 @@
                 </Grid>
             </SplitView.Pane>
 
+            <!-- Web Content Area -->
             <Grid x:Name="ContentGrid" Background="{ThemeResource SolidBackgroundColorQuarternaryBrush}" Margin="12,0,0,0" CornerRadius="8" BorderThickness="1,1,1,2" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}">
                 <WebView2 Source="about:blank" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
             </Grid>
         </SplitView>
         
+        <!-- App Title Bar Area -->
         <Grid x:Name="AppTitleBar" Height="44" Padding="6,0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition x:Name="DragAreaColumn" Width="*"/>
                 <ColumnDefinition x:Name="RightPaddingColumn" Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <StackPanel Orientation="Horizontal" Grid.Column="0">
-                <SplitButton Height="32" HorizontalAlignment="Right" Padding="0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Background="Transparent" BorderThickness="0" Grid.Column="1"
-                     Click="SwitchThemeByClick"
-                     ToolTipService.ToolTip="App Theme">
-                    <SplitButton.Resources>
+            <Grid Grid.Column="0" Width="{StaticResource SidebarWidth}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                    <StackPanel.Resources>
                         <ResourceDictionary>
-                            <ResourceDictionary.ThemeDictionaries>
-                                <ResourceDictionary x:Key="Default">
-                                    <SolidColorBrush x:Key="SplitButtonBorderBrushDivider" Color="Transparent" />
-                                    <SolidColorBrush x:Key="SplitButtonBorderBrushCheckedDivider" Color="Transparent" />
-                                </ResourceDictionary>
-                                <ResourceDictionary x:Key="Light">
-                                    <SolidColorBrush x:Key="SplitButtonBorderBrushDivider" Color="Transparent" />
-                                    <SolidColorBrush x:Key="SplitButtonBorderBrushCheckedDivider" Color="Transparent" />
-                                </ResourceDictionary>
-                                <ResourceDictionary x:Key="HighContrast">
-                                    <SolidColorBrush x:Key="SplitButtonBorderBrushDivider" Color="Transparent" />
-                                    <SolidColorBrush x:Key="SplitButtonBorderBrushCheckedDivider" Color="Transparent" />
-                                </ResourceDictionary>
-                            </ResourceDictionary.ThemeDictionaries>
+                            <SolidColorBrush x:Key="ButtonDisabledBackgroundThemeBrush" Color="Transparent" />
+                            
+                            <StaticResource x:Key="ButtonBackgroundDisabled" ResourceKey="ButtonDisabledBackgroundThemeBrush" />
+                            <StaticResource x:Key="ButtonBorderBrushDisabled" ResourceKey="ButtonDisabledBackgroundThemeBrush" />
                         </ResourceDictionary>
-                    </SplitButton.Resources>
-                    <FontIcon x:Name="ThemeIcon" FontSize="15" FontFamily="Segoe Fluent Icons" Glyph="&#xF08C;" Foreground="{ThemeResource DefaultTextForegroundThemeBrush}" />
-                    <SplitButton.Flyout>
-                        <MenuFlyout AreOpenCloseAnimationsEnabled="True">
-                            <MenuFlyoutItem Text="System Default" Click="SwitchThemeByMenu">
-                                <MenuFlyoutItem.Icon>
-                                    <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xF08C;" Foreground="{ThemeResource DefaultTextForegroundThemeBrush}" />
-                                </MenuFlyoutItem.Icon>
-                            </MenuFlyoutItem>
-                            <MenuFlyoutItem Text="Dark" Click="SwitchThemeByMenu">
-                                <MenuFlyoutItem.Icon>
-                                    <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE708;" Foreground="{ThemeResource DefaultTextForegroundThemeBrush}" />
-                                </MenuFlyoutItem.Icon>
-                            </MenuFlyoutItem>
-                            <MenuFlyoutItem Text="Light" Click="SwitchThemeByMenu">
-                                <MenuFlyoutItem.Icon>
-                                    <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE706;" Foreground="{ThemeResource DefaultTextForegroundThemeBrush}" />
-                                </MenuFlyoutItem.Icon>
-                            </MenuFlyoutItem>
-                            <MenuFlyoutSeparator/>
-                            <MenuFlyoutItem Text="Settings">
-                                <MenuFlyoutItem.Icon>
-                                    <AnimatedIcon Foreground="{ThemeResource DefaultTextForegroundThemeBrush}">
-                                        <AnimatedIcon.Source>
-                                            <animatedVisuals:AnimatedSettingsVisualSource/>
-                                        </AnimatedIcon.Source>
-                                        <AnimatedIcon.FallbackIconSource>
-                                            <SymbolIconSource Symbol="Setting" />
-                                        </AnimatedIcon.FallbackIconSource>
-                                    </AnimatedIcon>
-                                </MenuFlyoutItem.Icon>
-                            </MenuFlyoutItem>
-                        </MenuFlyout>
-                    </SplitButton.Flyout>
-                </SplitButton>
+                    </StackPanel.Resources>
+                    <Button x:Name="GoBackBtn" Background="Transparent" BorderBrush="Transparent" Padding="8" VerticalAlignment="Center"
+                            ToolTipService.ToolTip="Back (Alt+Left arrow)"
+                            Click="GoBackClicked"
+                            IsEnabled="False" IsTabStop="False">
+                        <Button.KeyboardAccelerators>
+                            <KeyboardAccelerator Key="Left" Modifiers="Menu" />
+                            <KeyboardAccelerator Key="XButton1" />
+                        </Button.KeyboardAccelerators>
+                        <FontIcon FontSize="14" FontFamily="Segoe Fluent Icons" Glyph="&#xE973;" />
+                    </Button>
 
-                <Button Click="MinimizeClicked" Padding="16,8" Style="{ThemeResource TextButtonStyle}" IsTabStop="False" 
-                ToolTipService.ToolTip="Minimize">
-                    <FontIcon FontSize="12" FontFamily="Segoe Fluent Icons" Glyph="&#xE921;" />
-                </Button>
-                <Button Click="MaximizeClicked" Padding="16,8" Style="{ThemeResource TextButtonStyle}" IsTabStop="False"
-                ToolTipService.ToolTip="Maximize/Restore">
-                    <FontIcon FontSize="12" FontFamily="Segoe Fluent Icons" Glyph="&#xE923;" />
-                </Button>
-                <Button Click="CloseClicked" Padding="16,8" Style="{ThemeResource ErrorTextButtonStyle}" IsTabStop="False"
-                ToolTipService.ToolTip="Close">
-                    <FontIcon FontSize="12" FontFamily="Segoe Fluent Icons" Glyph="&#xE8BB;" />
-                </Button>
-            </StackPanel>
+                    <Button x:Name="GoForwardBtn" Background="Transparent" BorderBrush="Transparent" Padding="8" VerticalAlignment="Center"
+                            ToolTipService.ToolTip="Forward (Alt+Right arrow)"
+                            Click="GoForwardClicked"
+                            IsEnabled="False" IsTabStop="False">
+                        <Button.KeyboardAccelerators>
+                            <KeyboardAccelerator Key="Right" Modifiers="Menu" />
+                            <KeyboardAccelerator Key="XButton2" />
+                        </Button.KeyboardAccelerators>
+                        <FontIcon FontSize="14" FontFamily="Segoe Fluent Icons" Glyph="&#xE974;" />
+                    </Button>
+
+                    <Button Background="Transparent" BorderBrush="Transparent" Padding="8" VerticalAlignment="Center"
+                            ToolTipService.ToolTip="Refresh (Ctrl+R)"
+                            Click="ReloadClicked"
+                            IsTabStop="False">
+                        <Button.KeyboardAccelerators>
+                            <KeyboardAccelerator Key="R" Modifiers="Control" />
+                        </Button.KeyboardAccelerators>
+                        <FontIcon FontSize="12" FontFamily="Segoe Fluent Icons" Glyph="&#xE149;" />
+                    </Button>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <SplitButton Height="32" HorizontalAlignment="Right" Padding="0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Background="Transparent" BorderThickness="0" Grid.Column="1"
+                                 Click="SwitchThemeByClick"
+                                 ToolTipService.ToolTip="App Theme"
+                                 IsTabStop="False">
+                        <SplitButton.Resources>
+                            <ResourceDictionary>
+                                <ResourceDictionary.ThemeDictionaries>
+                                    <ResourceDictionary x:Key="Default">
+                                        <SolidColorBrush x:Key="SplitButtonBorderBrushDivider" Color="Transparent" />
+                                        <SolidColorBrush x:Key="SplitButtonBorderBrushCheckedDivider" Color="Transparent" />
+                                    </ResourceDictionary>
+                                    <ResourceDictionary x:Key="Light">
+                                        <SolidColorBrush x:Key="SplitButtonBorderBrushDivider" Color="Transparent" />
+                                        <SolidColorBrush x:Key="SplitButtonBorderBrushCheckedDivider" Color="Transparent" />
+                                    </ResourceDictionary>
+                                    <ResourceDictionary x:Key="HighContrast">
+                                        <SolidColorBrush x:Key="SplitButtonBorderBrushDivider" Color="Transparent" />
+                                        <SolidColorBrush x:Key="SplitButtonBorderBrushCheckedDivider" Color="Transparent" />
+                                    </ResourceDictionary>
+                                </ResourceDictionary.ThemeDictionaries>
+                            </ResourceDictionary>
+                        </SplitButton.Resources>
+                        <FontIcon x:Name="ThemeIcon" FontSize="15" FontFamily="Segoe Fluent Icons" Glyph="&#xF08C;" Foreground="{ThemeResource DefaultTextForegroundThemeBrush}" />
+                        <SplitButton.Flyout>
+                            <MenuFlyout AreOpenCloseAnimationsEnabled="True">
+                                <MenuFlyoutItem Text="System Default" Click="SwitchThemeByMenu">
+                                    <MenuFlyoutItem.Icon>
+                                        <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xF08C;" Foreground="{ThemeResource DefaultTextForegroundThemeBrush}" />
+                                    </MenuFlyoutItem.Icon>
+                                </MenuFlyoutItem>
+                                <MenuFlyoutItem Text="Dark" Click="SwitchThemeByMenu">
+                                    <MenuFlyoutItem.Icon>
+                                        <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE708;" Foreground="{ThemeResource DefaultTextForegroundThemeBrush}" />
+                                    </MenuFlyoutItem.Icon>
+                                </MenuFlyoutItem>
+                                <MenuFlyoutItem Text="Light" Click="SwitchThemeByMenu">
+                                    <MenuFlyoutItem.Icon>
+                                        <FontIcon FontFamily="Segoe Fluent Icons" Glyph="&#xE706;" Foreground="{ThemeResource DefaultTextForegroundThemeBrush}" />
+                                    </MenuFlyoutItem.Icon>
+                                </MenuFlyoutItem>
+                                <MenuFlyoutSeparator/>
+                                <MenuFlyoutItem Text="Settings">
+                                    <MenuFlyoutItem.Icon>
+                                        <AnimatedIcon Foreground="{ThemeResource DefaultTextForegroundThemeBrush}">
+                                            <AnimatedIcon.Source>
+                                                <animatedVisuals:AnimatedSettingsVisualSource/>
+                                            </AnimatedIcon.Source>
+                                            <AnimatedIcon.FallbackIconSource>
+                                                <SymbolIconSource Symbol="Setting" />
+                                            </AnimatedIcon.FallbackIconSource>
+                                        </AnimatedIcon>
+                                    </MenuFlyoutItem.Icon>
+                                </MenuFlyoutItem>
+                            </MenuFlyout>
+                        </SplitButton.Flyout>
+                    </SplitButton>
+
+                    <Button Click="MinimizeClicked" Padding="8" Background="Transparent" BorderBrush="Transparent" VerticalAlignment="Center" IsTabStop="False" 
+                            ToolTipService.ToolTip="Minimize">
+                        <FontIcon FontSize="12" FontFamily="Segoe Fluent Icons" Glyph="&#xE921;" />
+                    </Button>
+                    <Button Click="MaximizeClicked" Padding="8" Background="Transparent" BorderBrush="Transparent" VerticalAlignment="Center" IsTabStop="False"
+                            ToolTipService.ToolTip="Maximize/Restore">
+                        <FontIcon FontSize="12" FontFamily="Segoe Fluent Icons" Glyph="&#xE923;" />
+                    </Button>
+                    <Button Click="CloseClicked" Padding="8" Style="{ThemeResource ErrorTextButtonStyle}" VerticalAlignment="Center" IsTabStop="False"
+                            ToolTipService.ToolTip="Close">
+                        <FontIcon FontSize="12" FontFamily="Segoe Fluent Icons" Glyph="&#xE8BB;" />
+                    </Button>
+                </StackPanel>
+            </Grid>
         </Grid>
     </Grid>
 </Window>

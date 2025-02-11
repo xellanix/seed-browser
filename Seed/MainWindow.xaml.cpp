@@ -14,12 +14,18 @@
 
 #include "microsoft.ui.xaml.window.h" // for IWindowNative
 #include "winrt/Microsoft.UI.Windowing.h"
-#include "winrt/Windows.UI.Xaml.Interop.h"
+#include "winrt/Microsoft.UI.Input.h"
+#include "winrt/Microsoft.UI.Interop.h"
 #include "winrt/Microsoft.UI.Xaml.Hosting.h"
 #include "winrt/Microsoft.UI.Xaml.Media.Animation.h"
 #include "winrt/Microsoft.UI.Xaml.Input.h"
 
 #pragma endregion
+
+#include <shellscalingapi.h>
+#pragma comment(lib, "Shcore.lib")
+
+#include "uri_normalize.h"
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -40,11 +46,31 @@ namespace winrt::Seed::implementation
         }
     }
 
+    double MainWindow::GetScaleAdjustment()
+    {
+        Microsoft::UI::WindowId windowId =
+            Microsoft::UI::GetWindowIdFromWindow(xellanix::desktop::WindowHandle);
+
+        muw::DisplayArea displayArea = muw::DisplayArea::GetFromWindowId(windowId, muw::DisplayAreaFallback::Nearest);
+        auto hMonitor = Microsoft::UI::GetMonitorFromDisplayId(displayArea.DisplayId());
+
+        // Get DPI.
+        UINT dpiX, dpiY;
+        int result = GetDpiForMonitor(hMonitor, MDT_DEFAULT, &dpiX, &dpiY);
+        if (result != S_OK)
+        {
+            return 1.0;
+        }
+
+        auto scaleFactorPercent = dpiX / 96.0;
+        return scaleFactorPercent;
+    }
+
     void MainWindow::SetModernAppTitleBar()
     {
         auto windowNative{ this->try_as<::IWindowNative>() };
         winrt::check_bool(windowNative);
-        windowNative->get_WindowHandle(&Xellanix::Desktop::WindowHandle);
+        windowNative->get_WindowHandle(&xellanix::desktop::WindowHandle);
 
         muw::AppWindow appWindow = this->AppWindow();
 
@@ -55,7 +81,7 @@ namespace winrt::Seed::implementation
             titleBar.ExtendsContentIntoTitleBar(true);
             titleBar.SetDragRectangles(
                 {
-                    Windows::Graphics::RectInt32{ 0, 0, static_cast<int32_t>(this->Bounds().Width), 12 }
+                    Windows::Graphics::RectInt32{ 0, 0, static_cast<int32_t>(this->Bounds().Width), static_cast<int32_t>(12 * GetScaleAdjustment()) }
                 }
             );
 
@@ -108,6 +134,8 @@ namespace winrt::Seed::implementation
         // Create a new tab that hosts a CEF-based browser.
         auto tab = make_self<implementation::TabItem>(2ui8, url);
         tab->RegisterURLBox(URLBox());
+        tab->RegisterGoBackButton(GoBackBtn());
+        tab->RegisterGoForwardButton(GoForwardBtn());
 
         m_tabItems.Append(*tab);
         RegulerTabList().SelectedIndex(m_tabItems.Size() - 1);
@@ -138,9 +166,52 @@ namespace winrt::Seed::implementation
         return false;
     }
 
-    void MainWindow::Grid_Loaded(wf::IInspectable const&, mux::RoutedEventArgs const&)
+    bool MainWindow::TryGoBack()
     {
-        
+        if (m_selectedTab)
+        {
+            if (auto view{ m_selectedTab.Content().try_as<muxc::WebView2>() })
+            {
+                if (view.CanGoBack())
+                {
+                    view.GoBack();
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    bool MainWindow::TryGoForward()
+    {
+        if (m_selectedTab)
+        {
+            if (auto view{ m_selectedTab.Content().try_as<muxc::WebView2>() })
+            {
+                if (view.CanGoForward())
+                {
+                    view.GoForward();
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    void MainWindow::Grid_Loaded(wf::IInspectable const&, mux::RoutedEventArgs const&) {}
+
+    void MainWindow::Grid_PointerPressed(wf::IInspectable const&, muxi::PointerRoutedEventArgs const& e)
+    {
+        if (e.GetCurrentPoint(nullptr).Properties().IsXButton1Pressed())
+        {
+            e.Handled(!TryGoBack());
+        }
+        else if (e.GetCurrentPoint(nullptr).Properties().IsXButton2Pressed())
+        {
+            e.Handled(!TryGoForward());
+        }
     }
 
     void MainWindow::NewTabRequested(wf::IInspectable const&, mux::RoutedEventArgs const&)
@@ -178,13 +249,40 @@ namespace winrt::Seed::implementation
         }
     }
 
+    void MainWindow::GoBackClicked(wf::IInspectable const&, mux::RoutedEventArgs const&)
+    {
+        TryGoBack();
+    }
+
+    void MainWindow::GoForwardClicked(wf::IInspectable const&, mux::RoutedEventArgs const&)
+    {
+        TryGoForward();
+    }
+
+    void MainWindow::ReloadClicked(wf::IInspectable const&, mux::RoutedEventArgs const&)
+    {
+        if (auto view{ m_selectedTab.Content().try_as<muxc::WebView2>() })
+        {
+            view.Reload();
+        }
+    }
+
     void MainWindow::URLBox_KeyDown(wf::IInspectable const&, muxi::KeyRoutedEventArgs const& e)
     {
         if (e.Key() == Windows::System::VirtualKey::Enter)
         {
-            if (m_selectedTab) m_selectedTab.Navigate(URLBox().Text());
-            else CreateNewTab(URLBox().Text());
+            hstring uri{ xu::normalize_uri(URLBox().Text()) };
+
+            if (m_selectedTab) m_selectedTab.Navigate(uri);
+            else CreateNewTab(uri);
+
+            Content().Focus(mux::FocusState::Programmatic);
         }
+    }
+
+    void MainWindow::FocusURLBarInvoked(muxi::KeyboardAccelerator const&, muxi::KeyboardAcceleratorInvokedEventArgs const&)
+    {
+        URLBox().Focus(mux::FocusState::Programmatic);
     }
 
     void MainWindow::Window_SizeChanged(wf::IInspectable const&, mux::WindowSizeChangedEventArgs const& args)
@@ -192,7 +290,7 @@ namespace winrt::Seed::implementation
         if (muw::AppWindowTitleBar::IsCustomizationSupported())
             this->AppWindow().TitleBar().SetDragRectangles(
             {
-                Windows::Graphics::RectInt32{ 0, 0, static_cast<int32_t>(args.Size().Width), 12 }
+                Windows::Graphics::RectInt32{ 0, 0, static_cast<int32_t>(args.Size().Width), static_cast<int32_t>(12 * GetScaleAdjustment()) }
             }
         );
     }

@@ -151,6 +151,8 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="resource.h" />
+    <ClInclude Include="string_utils.h" />
+    <ClInclude Include="uri_normalize.h" />
     <ClInclude Include="Utilities.h" />
   </ItemGroup>
   <ItemGroup>

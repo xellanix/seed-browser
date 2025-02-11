@@ -18,10 +18,10 @@ Task list:
 [ ] Footer area: toggle on/off sidebar
 [x] Improve url bar UI
 [x] Add url bar functionality
-[ ] Go back and forward
+[x] Go back and forward
 [ ] Preferred color scheme
 [ ] Show secure protocol icon
-[ ] Enhance title bar
-[ ] Identify is it url or text
-[ ] Keyboard accelerator
-[ ] Tooltip hover
+[x] Enhance title bar
+[x] Identify is it url or text
+[x] Keyboard accelerator
+[x] Tooltip hover

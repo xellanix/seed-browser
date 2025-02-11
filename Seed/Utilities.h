@@ -18,7 +18,7 @@
 
 namespace fs = std::filesystem;
 
-namespace Xellanix::Utilities
+namespace xellanix::utilities
 {
 	inline tm localtime_x(time_t _time)
 	{
@@ -224,26 +224,6 @@ namespace Xellanix::Utilities
 		return true;
 	}
 
-	inline std::wstring s_to_ws(std::string const& str)
-	{
-		if (str.empty())
-		{
-			return std::wstring();
-		}
-
-		int num_chars = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, str.c_str(), static_cast<int>(str.length()), NULL, 0);
-		std::wstring to;
-		if (num_chars)
-		{
-			to.resize(num_chars);
-			if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, str.c_str(), static_cast<int>(str.length()), &to[0], num_chars))
-			{
-				return to;
-			}
-		}
-		return std::wstring();
-	}
-
 	inline std::pair<double, std::wstring> NormalizeBytes(double const& bytes)
 	{
 		std::array<std::wstring, 9> scale{ L"B", L"KB", L"MB", L"GB", L"TB", L"PB", L"EB", L"ZB", L"YB" };
@@ -363,7 +343,7 @@ namespace Xellanix::Utilities
 inline fs::path downloaded_update_path = L"";
 inline unsigned long long downloaded_updated_size = 0;
 
-namespace Xellanix::Desktop
+namespace xellanix::desktop
 {
 	struct __declspec(uuid("45D64A29-A63E-4CB6-B498-5781D298CB4F")) __declspec(novtable)
 		ICoreWindowInterop : public IUnknown
@@ -386,7 +366,7 @@ namespace Xellanix::Desktop
 inline bool get_ftime(std::wstring const& settingname, time_t& ctime, time_t& mtime, long long& size)
 {
 	struct _stati64 buf;
-	if (_wstat64((Xellanix::Utilities::LocalAppData / settingname).wstring().c_str(), &buf) == 0)
+	if (_wstat64((xellanix::utilities::LocalAppData / settingname).wstring().c_str(), &buf) == 0)
 	{
 		ctime = buf.st_ctime;
 		mtime = buf.st_mtime;
