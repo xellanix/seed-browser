@@ -1,5 +1,8 @@
 ﻿#pragma once
 
+#define USE_XWINDOW_UTILS 1
+#define USE_XURI_NORMALIZE 1
+
 #include "Tab.g.h"
 #include "TabItem.g.h"
 #include "MainWindow.g.h"

@@ -25,8 +25,6 @@
 #include <shellscalingapi.h>
 #pragma comment(lib, "Shcore.lib")
 
-#include "uri_normalize.h"
-
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
 
