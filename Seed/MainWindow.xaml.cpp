@@ -33,15 +33,6 @@ namespace winrt::Seed::implementation
     MainWindow::MainWindow()
     {
         SetModernAppTitleBar();
-
-        for (int i = 0; i < 5; i++)
-        {
-            auto item = winrt::make_self<implementation::Tab>();
-            item->URL(L"https://google.com");
-            item->Title(L"Google");
-            item->Favicon(L"https://raw.githubusercontent.com/DennisSuitters/LibreICONS/refs/heads/master/svg/libre-gui-bookmark.svg");
-            m_favTabs.Append(*item);
-        }
     }
 
     double MainWindow::GetScaleAdjustment()
@@ -71,6 +62,7 @@ namespace winrt::Seed::implementation
         windowNative->get_WindowHandle(&xellanix::desktop::WindowHandle);
 
         muw::AppWindow appWindow = this->AppWindow();
+        appWindow.SetIcon(L"Assets/icon.ico");
 
         if (muw::AppWindowTitleBar::IsCustomizationSupported())
         {
@@ -139,10 +131,15 @@ namespace winrt::Seed::implementation
         RegulerTabList().SelectedIndex(m_tabItems.Size() - 1);
     }
 
-    bool MainWindow::SearchTabID(uint32_t search, uint32_t& id)
+    bool MainWindow::SearchTabID(uint32_t search, uint8_t type, uint32_t& id)
     {
-        uint32_t l = 0, h = m_tabItems.Size() - 1;
-        if (m_tabItems.GetAt(l).Id() == search)
+        if (type > 2ui8) return false;
+
+        // 2 = reguler, 1 = pinned, 0 = favorite
+        auto const& vec{ type == 2ui8 ? m_tabItems : (type == 1ui8 ? m_pinnedTabItems : m_tiledTabItems) };
+
+        uint32_t l = 0, h = vec.Size() - 1;
+        if (vec.GetAt(l).Id() == search)
         {
             id = l;
             return true;
@@ -152,13 +149,13 @@ namespace winrt::Seed::implementation
         {
             uint32_t m = l + ((h - l) / 2);
 
-            if (m_tabItems.GetAt(m).Id() == search)
+            if (vec.GetAt(m).Id() == search)
             {
                 id = m;
                 return true;
             }
-            else if (m_tabItems.GetAt(m).Id() < search) l = m + 1;
-            else if (m_tabItems.GetAt(m).Id() > search) h = m - 1;
+            else if (vec.GetAt(m).Id() < search) l = m + 1;
+            else if (vec.GetAt(m).Id() > search) h = m - 1;
         }
 
         return false;
@@ -198,6 +195,60 @@ namespace winrt::Seed::implementation
         return false;
     }
 
+    void MainWindow::CloseTab(Seed::TabItem const& item)
+    {
+        auto type{ item.Type() };
+
+        uint32_t index = 0;
+        SearchTabID(item.Id(), type, index);
+
+        item.CloseTab();
+        
+        if (type == 2ui8) m_tabItems.RemoveAt(index);
+        else if (type == 1ui8) m_pinnedTabItems.RemoveAt(index);
+        else if (type == 0ui8) m_tiledTabItems.RemoveAt(index);
+        
+        ContentGrid().Children().Clear();
+    }
+
+    void MainWindow::UpdateSelectedItem(wf::IInspectable const& item)
+    {
+        if (auto tab{ item.try_as<Seed::TabItem>() })
+        {
+            tab.ActivateTab();
+
+            ContentGrid().Children().Clear();
+            ContentGrid().Children().Append(tab.Content());
+
+            URLBox().Text(tab.CurrentURL());
+
+            if (m_selectedTab)
+            {
+                if (auto type{ m_selectedTab.Type() }; type != tab.Type())
+                {
+                    uint32_t index = 0;
+                    SearchTabID(m_selectedTab.Id(), type, index);
+
+                    switch (type)
+                    {
+                        case 0ui8:
+                            TiledTabList().Deselect(index);
+                            break;
+                        case 1ui8:
+                            PinnedTabList().DeselectRange(muxd::ItemIndexRange(index, 1));
+                            break;
+                        case 2ui8:
+                            RegulerTabList().DeselectRange(muxd::ItemIndexRange(index, 1));
+                            break;
+                    }
+                }
+            }
+
+            m_selectedTab.PutToSleepTab();
+            m_selectedTab = tab;
+        }
+    }
+
     void MainWindow::Grid_Loaded(wf::IInspectable const&, mux::RoutedEventArgs const&) {}
 
     void MainWindow::Grid_PointerPressed(wf::IInspectable const&, muxi::PointerRoutedEventArgs const& e)
@@ -220,31 +271,22 @@ namespace winrt::Seed::implementation
     void MainWindow::RemoveTabClicked(wf::IInspectable const& sender, mux::RoutedEventArgs const&)
     {
         const auto context{ sender.as<muxc::Button>().DataContext().as<Seed::TabItem>() };
+        if (!context) return;
 
-        uint32_t index = 0;
-        SearchTabID(context.Id(), index);
-
-        context.CloseTab();
-        m_tabItems.RemoveAt(index);
-        ContentGrid().Children().Clear();
+        CloseTab(context);
     }
 
     void MainWindow::SelectedTabChanged(wf::IInspectable const& sender, muxc::SelectionChangedEventArgs const&)
     {
         if (auto lv{ sender.try_as<muxc::ListView>() })
         {
-            if (auto tab{ lv.SelectedItem().try_as<Seed::TabItem>() })
-            {
-                tab.ActivateTab();
-
-                ContentGrid().Children().Clear();
-                ContentGrid().Children().Append(tab.Content());
-
-                URLBox().Text(tab.CurrentURL());
-
-                m_selectedTab = tab;
-            }
+            UpdateSelectedItem(lv.SelectedItem());
         }
+    }
+
+    void MainWindow::SelectedTileTabChanged(muxc::ItemsView const& sender, muxc::ItemsViewSelectionChangedEventArgs const&)
+    {
+        UpdateSelectedItem(sender.SelectedItem());
     }
 
     void MainWindow::GoBackClicked(wf::IInspectable const&, mux::RoutedEventArgs const&)
@@ -281,6 +323,107 @@ namespace winrt::Seed::implementation
     void MainWindow::FocusURLBarInvoked(muxi::KeyboardAccelerator const&, muxi::KeyboardAcceleratorInvokedEventArgs const&)
     {
         URLBox().Focus(mux::FocusState::Programmatic);
+    }
+
+    wf::IAsyncAction MainWindow::RenameTabClicked(wf::IInspectable const& sender, mux::RoutedEventArgs const&)
+    {
+        if (auto btn{ sender.try_as<muxc::MenuFlyoutItem>() })
+        {
+            auto item{ btn.DataContext().try_as<Seed::TabItem>() };
+            if (item && RegulerTabContext()) {}
+            else if (item = m_selectedTab) {}
+            else return;
+
+            muxc::ContentDialog dialog{};
+            dialog.XamlRoot(Content().XamlRoot());
+            dialog.Title(box_value(L"Rename tab"));
+            dialog.PrimaryButtonText(L"Save");
+            dialog.CloseButtonText(L"Cancel");
+            dialog.DefaultButton(muxc::ContentDialogButton::Primary);
+
+            Seed::RenameTabDialog content{};
+            content.TabUrl(item.CurrentURL());
+            content.NewTitle(item.Title());
+
+            dialog.Content(content);
+
+            auto res = co_await dialog.ShowAsync();
+            if (res == muxc::ContentDialogResult::Primary)
+            {
+                // save and set
+                item.Title(content.NewTitle());
+            }
+        }
+    }
+
+    void MainWindow::PinTabClicked(wf::IInspectable const& sender, mux::RoutedEventArgs const&)
+    {
+        if (auto btn{ sender.try_as<muxc::MenuFlyoutItem>() })
+        {
+            auto item{ btn.DataContext().try_as<Seed::TabItem>() };
+            if (item && RegulerTabContext()) {}
+            else if (item = m_selectedTab) {}
+            else return;
+
+            auto before{ item.Type() };
+            uint32_t index = 0;
+            SearchTabID(item.Id(), before, index);
+
+            if (before == 1ui8)
+            {
+                // Unpin
+                item.Type(2ui8);
+                m_tabItems.Append(item);
+                RegulerTabList().SelectedIndex(m_tabItems.Size() - 1);
+
+                m_pinnedTabItems.RemoveAt(index);
+            }
+            else
+            {
+                item.Type(1ui8);
+                m_pinnedTabItems.Append(item);
+                PinnedTabList().SelectedIndex(m_pinnedTabItems.Size() - 1);
+
+                if (before == 2ui8) m_tabItems.RemoveAt(index);
+                else if (before == 0ui8) m_tiledTabItems.RemoveAt(index);
+            }
+        }
+    }
+
+    void MainWindow::TileTabClicked(wf::IInspectable const& sender, mux::RoutedEventArgs const&)
+    {
+        if (auto btn{ sender.try_as<muxc::MenuFlyoutItem>() })
+        {
+            auto item{ btn.DataContext().try_as<Seed::TabItem>() };
+            if (item && RegulerTabContext()) {}
+            else if (item = m_selectedTab) {}
+            else return;
+
+            auto before{ item.Type() };
+            uint32_t index = 0;
+            SearchTabID(item.Id(), before, index);
+
+            item.Type(0ui8);
+            m_tiledTabItems.Append(item);
+            TiledTabList().Select(m_tiledTabItems.Size() - 1);
+            if (m_tiledTabItems.Size() <= 1) TiledTabList().UpdateLayout();
+            
+            if (before == 2ui8) m_tabItems.RemoveAt(index);
+            else if (before == 1ui8) m_pinnedTabItems.RemoveAt(index);
+        }
+    }
+
+    void MainWindow::CloseTabClicked(wf::IInspectable const& sender, mux::RoutedEventArgs const&)
+    {
+        if (auto btn{ sender.try_as<muxc::MenuFlyoutItem>() })
+        {
+            auto item{ btn.DataContext().try_as<Seed::TabItem>() };
+            if (item && RegulerTabContext()) {}
+            else if (item = m_selectedTab) {}
+            else return;
+
+            CloseTab(item);
+        }
     }
 
     void MainWindow::Window_SizeChanged(wf::IInspectable const&, mux::WindowSizeChangedEventArgs const& args)

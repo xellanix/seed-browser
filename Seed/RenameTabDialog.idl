@@ -1,0 +1,10 @@
+namespace Seed
+{
+    [default_interface]
+    runtimeclass RenameTabDialog : Microsoft.UI.Xaml.Controls.Page
+    {
+        RenameTabDialog();
+        String TabUrl;
+        String NewTitle;
+    }
+}

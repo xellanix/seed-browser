@@ -6,9 +6,9 @@ Task list:
 [x] Add "Favorite" item and UI
 [x] Add the web engine
 [x] Tab (reguler) management
-[ ] Edit tab title
-[ ] Pin tab
-[ ] Add tab to favorites
+[x] Edit tab title
+[x] Pin tab
+[x] Add tab to favorites
 [ ] Hide tab close button if not hover
 [ ] Collapse sidebar
 [ ] Improve workspace area UI
@@ -25,3 +25,8 @@ Task list:
 [x] Identify is it url or text
 [x] Keyboard accelerator
 [x] Tooltip hover
+[ ] Add menu flyout to pinned and tiled tab 
+[ ] Keyboard accelerator to the window not control
+[ ] Save pinned and tiled tab to file
+[ ] Duplicate tab function
+[ ] Copy link tab function

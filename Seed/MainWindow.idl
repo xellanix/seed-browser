@@ -24,6 +24,7 @@ namespace Seed
         String FaviconUri{ get; };
 
         void ActivateTab();
+        void PutToSleepTab();
         void Navigate(String url);
         void CloseTab();
         void RegisterURLBox(Microsoft.UI.Xaml.Controls.TextBox urlBox);
@@ -34,7 +35,8 @@ namespace Seed
     {
         MainWindow();
         
-        Windows.Foundation.Collections.IObservableVector<Tab> FavoritTabs;
+        Windows.Foundation.Collections.IObservableVector<TabItem> TiledTabItems;
+        Windows.Foundation.Collections.IObservableVector<TabItem> PinnedTabItems;
         Windows.Foundation.Collections.IObservableVector<TabItem> TabItems;
     }
 }

@@ -80,8 +80,7 @@ namespace winrt::Seed::implementation
             m_content = muxc::WebView2();
             m_content.Source(wf::Uri(initialUrl));
 
-            m_content.EnsureCoreWebView2Async();
-            m_initRevoker = m_content.CoreWebView2Initialized(auto_revoke, { this, &TabItem::CoreInitialize });
+            InitializeWebView2();
 
             m_backToken = m_content.RegisterPropertyChangedCallback(muxc::WebView2::CanGoBackProperty(), { this, &TabItem::WebView2DepsChanged });
             m_forwardToken = m_content.RegisterPropertyChangedCallback(muxc::WebView2::CanGoForwardProperty(), { this, &TabItem::WebView2DepsChanged });
@@ -143,9 +142,12 @@ namespace winrt::Seed::implementation
                 m_currentUrl = m_savedUrl;
             }
 
-            // Restart the sleep timer.
-            if (m_sleepTimer)
-                m_sleepTimer.Start();
+            // Stop the sleep timer.
+            if (m_sleepTimer) m_sleepTimer.Stop();
+        }
+        void PutToSleepTab()
+        {
+            if (m_sleepTimer) m_sleepTimer.Start();
         }
 
         void Navigate(hstring const& url)
@@ -166,6 +168,7 @@ namespace winrt::Seed::implementation
             m_content.UnregisterPropertyChangedCallback(muxc::WebView2::CanGoBackProperty(), m_backToken);
             m_content.UnregisterPropertyChangedCallback(muxc::WebView2::CanGoForwardProperty(), m_forwardToken);
 
+            m_sleepTimer.Stop();
             m_content.Close();
 
             m_sleepTimer = nullptr;
@@ -187,6 +190,18 @@ namespace winrt::Seed::implementation
         }
 
     private:
+        wf::IAsyncAction InitializeWebView2()
+        {
+            mwwv2c::CoreWebView2EnvironmentOptions opt{};
+            opt.AreBrowserExtensionsEnabled(true);
+            opt.ScrollBarStyle(mwwv2c::CoreWebView2ScrollbarStyle::FluentOverlay);
+
+            auto env{ co_await mwwv2c::CoreWebView2Environment::CreateWithOptionsAsync(L"", L"D:\\Seed Browser\\UDF", opt) };
+            
+            co_await m_content.EnsureCoreWebView2Async(env);
+            m_initRevoker = m_content.CoreWebView2Initialized(auto_revoke, { this, &TabItem::CoreInitialize });
+        }
+
         void CoreInitialize(muxc::WebView2 const&, muxc::CoreWebView2InitializedEventArgs const&)
         {
             auto core{ m_content.CoreWebView2() };
@@ -228,7 +243,6 @@ namespace winrt::Seed::implementation
                 // Logger::LogInfo(L"Tab auto-sleep triggered for URL: " + m_currentUrl);
                 SleepTab();
             });
-            m_sleepTimer.Start();
         }
 
         void SleepTab()
@@ -274,7 +288,8 @@ namespace winrt::Seed::implementation
     {
     private:
         winrt::mux::FrameworkElement m_rootElement{ nullptr };
-        wfc::IObservableVector<Seed::Tab> m_favTabs{ winrt::single_threaded_observable_vector<Seed::Tab>() };
+        wfc::IObservableVector<Seed::TabItem> m_tiledTabItems{ winrt::single_threaded_observable_vector<Seed::TabItem>() };
+        wfc::IObservableVector<Seed::TabItem> m_pinnedTabItems{ winrt::single_threaded_observable_vector<Seed::TabItem>() };
         wfc::IObservableVector<Seed::TabItem> m_tabItems{ winrt::single_threaded_observable_vector<Seed::TabItem>() };
 
         Seed::TabItem m_selectedTab{ nullptr };
@@ -285,23 +300,36 @@ namespace winrt::Seed::implementation
 
         void CreateNewTab(winrt::hstring const& url);
 
-        bool SearchTabID(uint32_t search, uint32_t& id);
+        bool SearchTabID(uint32_t search, uint8_t type, uint32_t& id);
 
         bool TryGoBack();
         bool TryGoForward();
 
+        void CloseTab(Seed::TabItem const& item);
+
+        void UpdateSelectedItem(wf::IInspectable const& item);
+
     public:
         MainWindow();
 
-        wfc::IObservableVector<Seed::Tab> FavoritTabs() const { return m_favTabs; }
-        void FavoritTabs(wfc::IObservableVector<Seed::Tab> const& value)
+        wfc::IObservableVector<Seed::TabItem> TiledTabItems() const { return m_tiledTabItems; }
+        void TiledTabItems(wfc::IObservableVector<Seed::TabItem> const& value)
         {
-            if (m_favTabs != value)
+            if (m_tiledTabItems != value)
             {
-                m_favTabs = value;
+                m_tiledTabItems = value;
             }
         }
-        
+
+        wfc::IObservableVector<Seed::TabItem> PinnedTabItems() const { return m_pinnedTabItems; }
+        void PinnedTabItems(wfc::IObservableVector<Seed::TabItem> const& value)
+        {
+            if (m_pinnedTabItems != value)
+            {
+                m_pinnedTabItems = value;
+            }
+        }
+
         wfc::IObservableVector<Seed::TabItem> TabItems() const { return m_tabItems; }
         void TabItems(wfc::IObservableVector<Seed::TabItem> const& value)
         {
@@ -326,6 +354,7 @@ namespace winrt::Seed::implementation
         void NewTabRequested(wf::IInspectable const& sender, mux::RoutedEventArgs const& e);
         void RemoveTabClicked(wf::IInspectable const& sender, mux::RoutedEventArgs const& e);
         void SelectedTabChanged(wf::IInspectable const& sender, muxc::SelectionChangedEventArgs const& e);
+        void SelectedTileTabChanged(muxc::ItemsView const& sender, muxc::ItemsViewSelectionChangedEventArgs const& args);
 
         void GoBackClicked(wf::IInspectable const& sender, mux::RoutedEventArgs const& e);
         void GoForwardClicked(wf::IInspectable const& sender, mux::RoutedEventArgs const& e);
@@ -333,6 +362,11 @@ namespace winrt::Seed::implementation
         void URLBox_KeyDown(wf::IInspectable const& sender, muxi::KeyRoutedEventArgs const& e);
         
         void FocusURLBarInvoked(muxi::KeyboardAccelerator const& sender, muxi::KeyboardAcceleratorInvokedEventArgs const& args);
+
+        wf::IAsyncAction RenameTabClicked(wf::IInspectable const& sender, mux::RoutedEventArgs const& e);
+        void PinTabClicked(wf::IInspectable const& sender, mux::RoutedEventArgs const& e);
+        void TileTabClicked(wf::IInspectable const& sender, mux::RoutedEventArgs const& e);
+        void CloseTabClicked(wf::IInspectable const& sender, mux::RoutedEventArgs const& e);
     };
 }
 

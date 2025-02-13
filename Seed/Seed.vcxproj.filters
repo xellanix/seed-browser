@@ -2,6 +2,7 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Midl Include="MainWindow.idl" />
+    <Midl Include="RenameTabDialog.idl" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp">
@@ -31,6 +32,12 @@
       <Filter>Assets</Filter>
     </Image>
     <Image Include="Assets\LockScreenLogo.scale-200.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\icon.ico">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\small.ico">
       <Filter>Assets</Filter>
     </Image>
   </ItemGroup>
@@ -66,6 +73,9 @@
       <Filter>Designer Files</Filter>
     </Page>
     <Page Include="GlobalStyle.xaml">
+      <Filter>Designer Files</Filter>
+    </Page>
+    <Page Include="RenameTabDialog.xaml">
       <Filter>Designer Files</Filter>
     </Page>
   </ItemGroup>
